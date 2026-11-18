@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="330" viewBox="0 0 960 330" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif">
+  <title>Prebooze brand accent options</title>
+  <rect width="960" height="330" fill="#f2f1f4"/>
+  <clipPath id="card"><rect width="296" height="290" rx="14"/></clipPath>
+  <!-- One card per option: Light half (left), Dark half (right), then name and note. -->
+
+  <!-- Afterglow -->
+  <g transform="translate(16,20)">
+    <rect width="296" height="290" rx="14" fill="#ffffff" stroke="#c8217a" stroke-width="2.5"/>
+    <rect x="1" y="1" width="147" height="180" rx="13" fill="#ffffff"/>
+    <rect x="148" y="1" width="147" height="180" fill="#1e1e20" clip-path="url(#card)"/>
+    <rect x="16" y="18" width="92" height="26" rx="6" fill="#c8217a"/><text x="62" y="36" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">Harmonize</text>
+    <rect x="164" y="18" width="92" height="26" rx="6" fill="#ff4fa8"/><text x="210" y="36" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">Harmonize</text>
+    <rect x="16" y="58" width="116" height="24" rx="6" fill="#c8217a" fill-opacity=".16"/><text x="24" y="74" font-size="12" font-weight="600" fill="#1b1a1f">Glasshouse</text>
+    <rect x="164" y="58" width="116" height="24" rx="6" fill="#ff4fa8" fill-opacity=".16"/><text x="172" y="74" font-size="12" font-weight="600" fill="#ececf0">Glasshouse</text>
+    <rect x="16" y="98" width="34" height="20" rx="10" fill="#c8217a"/><circle cx="40" cy="108" r="8" fill="#ffffff"/>
+    <rect x="164" y="98" width="34" height="20" rx="10" fill="#ff4fa8"/><circle cx="188" cy="108" r="8" fill="#ffffff"/>
+    <circle cx="80" cy="108" r="11" fill="none" stroke="#00000018" stroke-width="3.5"/><circle cx="80" cy="108" r="11" fill="none" stroke="#c8217a" stroke-width="3.5" stroke-dasharray="46 70" transform="rotate(-90 80 108)" stroke-linecap="round"/>
+    <circle cx="228" cy="108" r="11" fill="none" stroke="#ffffff22" stroke-width="3.5"/><circle cx="228" cy="108" r="11" fill="none" stroke="#ff4fa8" stroke-width="3.5" stroke-dasharray="46 70" transform="rotate(-90 228 108)" stroke-linecap="round"/>
+    <rect x="16" y="140" width="116" height="5" rx="2.5" fill="#00000018"/><rect x="16" y="140" width="72" height="5" rx="2.5" fill="#c8217a"/>
+    <rect x="164" y="140" width="116" height="5" rx="2.5" fill="#ffffff22"/><rect x="164" y="140" width="72" height="5" rx="2.5" fill="#ff4fa8"/>
+    <text x="16" y="168" font-size="10" fill="#5c5a65">Light</text><text x="164" y="168" font-size="10" fill="#a3a1ac">Dark</text>
+    <text x="16" y="210" font-size="15" font-weight="700" fill="#1b1a1f">Afterglow</text>
+    <rect x="98" y="197" width="64" height="18" rx="9" fill="#c8217a"/><text x="130" y="210" font-size="10.5" font-weight="700" fill="#ffffff" text-anchor="middle">CHOSEN</text>
+    <text x="16" y="230" font-size="11" fill="#5c5a65" font-family="ui-monospace, Menlo, monospace">#C8217A / #FF4FA8</text>
+    <text x="16" y="252" font-size="11.5" fill="#5c5a65">Fuchsia. Shares no hue with any Match,</text>
+    <text x="16" y="268" font-size="11.5" fill="#5c5a65">section, lane or cue colour.</text>
+  </g>
+
+  <!-- Ultraviolet -->
+  <g transform="translate(332,20)">
+    <rect width="296" height="290" rx="14" fill="#ffffff" stroke="#dcdae1"/>
+    <rect x="1" y="1" width="147" height="180" rx="13" fill="#ffffff"/>
+    <rect x="148" y="1" width="147" height="180" fill="#1e1e20" clip-path="url(#card)"/>
+    <rect x="16" y="18" width="92" height="26" rx="6" fill="#6145ef"/><text x="62" y="36" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">Harmonize</text>
+    <rect x="164" y="18" width="92" height="26" rx="6" fill="#9d88ff"/><text x="210" y="36" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">Harmonize</text>
+    <rect x="16" y="58" width="116" height="24" rx="6" fill="#6145ef" fill-opacity=".16"/><text x="24" y="74" font-size="12" font-weight="600" fill="#1b1a1f">Glasshouse</text>
+    <rect x="164" y="58" width="116" height="24" rx="6" fill="#9d88ff" fill-opacity=".16"/><text x="172" y="74" font-size="12" font-weight="600" fill="#ececf0">Glasshouse</text>
+    <rect x="16" y="98" width="34" height="20" rx="10" fill="#6145ef"/><circle cx="40" cy="108" r="8" fill="#ffffff"/>
+    <rect x="164" y="98" width="34" height="20" rx="10" fill="#9d88ff"/><circle cx="188" cy="108" r="8" fill="#ffffff"/>
+    <circle cx="80" cy="108" r="11" fill="none" stroke="#00000018" stroke-width="3.5"/><circle cx="80" cy="108" r="11" fill="none" stroke="#6145ef" stroke-width="3.5" stroke-dasharray="46 70" transform="rotate(-90 80 108)" stroke-linecap="round"/>
+    <circle cx="228" cy="108" r="11" fill="none" stroke="#ffffff22" stroke-width="3.5"/><circle cx="228" cy="108" r="11" fill="none" stroke="#9d88ff" stroke-width="3.5" stroke-dasharray="46 70" transform="rotate(-90 228 108)" stroke-linecap="round"/>
+    <rect x="16" y="140" width="116" height="5" rx="2.5" fill="#00000018"/><rect x="16" y="140" width="72" height="5" rx="2.5" fill="#6145ef"/>
+    <rect x="164" y="140" width="116" height="5" rx="2.5" fill="#ffffff22"/><rect x="164" y="140" width="72" height="5" rx="2.5" fill="#9d88ff"/>
+    <text x="16" y="168" font-size="10" fill="#5c5a65">Light</text><text x="164" y="168" font-size="10" fill="#a3a1ac">Dark</text>
+    <text x="16" y="210" font-size="15" font-weight="700" fill="#1b1a1f">Ultraviolet</text>
+    <text x="16" y="230" font-size="11" fill="#5c5a65" font-family="ui-monospace, Menlo, monospace">#6145EF / #9D88FF</text>
+    <text x="16" y="252" font-size="11.5" fill="#5c5a65">Violet. Close to the indigo used for</text>
+    <text x="16" y="268" font-size="11.5" fill="#5c5a65">the Key change Match.</text>
+  </g>
+
+  <!-- Lagoon -->
+  <g transform="translate(648,20)">
+    <rect width="296" height="290" rx="14" fill="#ffffff" stroke="#dcdae1"/>
+    <rect x="1" y="1" width="147" height="180" rx="13" fill="#ffffff"/>
+    <rect x="148" y="1" width="147" height="180" fill="#1e1e20" clip-path="url(#card)"/>
+    <rect x="16" y="18" width="92" height="26" rx="6" fill="#06807a"/><text x="62" y="36" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">Harmonize</text>
+    <rect x="164" y="18" width="92" height="26" rx="6" fill="#2ad1c5"/><text x="210" y="36" font-size="12" font-weight="600" fill="#00211f" text-anchor="middle">Harmonize</text>
+    <rect x="16" y="58" width="116" height="24" rx="6" fill="#06807a" fill-opacity=".16"/><text x="24" y="74" font-size="12" font-weight="600" fill="#1b1a1f">Glasshouse</text>
+    <rect x="164" y="58" width="116" height="24" rx="6" fill="#2ad1c5" fill-opacity=".16"/><text x="172" y="74" font-size="12" font-weight="600" fill="#ececf0">Glasshouse</text>
+    <rect x="16" y="98" width="34" height="20" rx="10" fill="#06807a"/><circle cx="40" cy="108" r="8" fill="#ffffff"/>
+    <rect x="164" y="98" width="34" height="20" rx="10" fill="#2ad1c5"/><circle cx="188" cy="108" r="8" fill="#ffffff"/>
+    <circle cx="80" cy="108" r="11" fill="none" stroke="#00000018" stroke-width="3.5"/><circle cx="80" cy="108" r="11" fill="none" stroke="#06807a" stroke-width="3.5" stroke-dasharray="46 70" transform="rotate(-90 80 108)" stroke-linecap="round"/>
+    <circle cx="228" cy="108" r="11" fill="none" stroke="#ffffff22" stroke-width="3.5"/><circle cx="228" cy="108" r="11" fill="none" stroke="#2ad1c5" stroke-width="3.5" stroke-dasharray="46 70" transform="rotate(-90 228 108)" stroke-linecap="round"/>
+    <rect x="16" y="140" width="116" height="5" rx="2.5" fill="#00000018"/><rect x="16" y="140" width="72" height="5" rx="2.5" fill="#06807a"/>
+    <rect x="164" y="140" width="116" height="5" rx="2.5" fill="#ffffff22"/><rect x="164" y="140" width="72" height="5" rx="2.5" fill="#2ad1c5"/>
+    <text x="16" y="168" font-size="10" fill="#5c5a65">Light</text><text x="164" y="168" font-size="10" fill="#a3a1ac">Dark</text>
+    <text x="16" y="210" font-size="15" font-weight="700" fill="#1b1a1f">Lagoon</text>
+    <text x="16" y="230" font-size="11" fill="#5c5a65" font-family="ui-monospace, Menlo, monospace">#06807A / #2AD1C5</text>
+    <text x="16" y="252" font-size="11.5" fill="#5c5a65">Teal. Sits between Smooth green and</text>
+    <text x="16" y="268" font-size="11.5" fill="#5c5a65">Energy down cyan; dark text in Dark.</text>
+  </g>
+</svg>
