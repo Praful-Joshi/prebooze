@@ -85,6 +85,11 @@ let package = Package(
             dependencies: ["HarmonizerCore"],
             resources: [.copy("Fixtures")]
         ),
+        .testTarget(
+            name: "HarmonizerAppTests",
+            dependencies: ["HarmonizerApp", "HarmonizerCore"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
     ],
     cxxLanguageStandard: .cxx17
 )

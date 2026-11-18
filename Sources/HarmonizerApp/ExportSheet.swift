@@ -20,7 +20,7 @@ struct ExportSheet: View {
     private var count: Int { document.project.included.count }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: Space.xl) {
             Text("Export Mix").font(.title2.bold())
             Form {
                 LabeledContent("Formats") {
@@ -55,7 +55,7 @@ struct ExportSheet: View {
             if let progress {
                 ProgressView(value: progress) { Text(status).font(.caption) }
             }
-            if let error { Text(error).foregroundStyle(.red).font(.callout) }
+            if let error { Text(error).foregroundStyle(Ink.error).font(.callout) }
             if let result {
                 Text("Exported \(clock(result.seconds)) to \(result.folder.path)").font(.callout)
             }
@@ -71,7 +71,7 @@ struct ExportSheet: View {
                 }
             }
         }
-        .padding(20)
+        .padding(Space.xxl)
         .frame(width: 520)
         .onAppear { to = max(2, count) }
     }

@@ -17,9 +17,9 @@ struct TrackDetail: View {
     private var track: ProjectTrack? { document.project.tracks.first { $0.id == trackID } }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.l) {
             if let track {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     Text(track.title).font(.title3.bold()).lineLimit(2)
                     Text(track.artist).foregroundStyle(.secondary)
                 }
@@ -29,7 +29,7 @@ struct TrackDetail: View {
                     controls(track, info)
                     cueRow(info)
                 } else {
-                    RoundedRectangle(cornerRadius: 6).fill(.quaternary).frame(height: 150)
+                    RoundedRectangle(cornerRadius: Radius.medium, style: .continuous).fill(.quaternary).frame(height: 150)
                         .overlay(Text("Analysing…").foregroundStyle(.secondary))
                 }
                 facts(track)
@@ -70,13 +70,13 @@ struct TrackDetail: View {
     // MARK: Controls
 
     private func controls(_ track: ProjectTrack, _ info: TrackMixInfo) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: Space.xl) {
             Button { preview.toggle() } label: {
                 Label(preview.playing ? "Stop" : "Play from marker", systemImage: preview.playing ? "stop.fill" : "play.fill")
             }
             .help("Plays the file from the white marker (click the waveform to move it)")
             Divider().frame(height: 16)
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xs) {
                 Text("Bar 1")
                 Button { edit("Move Bar 1") { $0.downbeatShift -= 1 } } label: { Image(systemName: "chevron.left") }
                     .help("One beat earlier")
@@ -84,7 +84,7 @@ struct TrackDetail: View {
                     .help("One beat later")
                 if info.edits.downbeatShift != 0 {
                     Text(String(format: "%+d beat%@", info.edits.downbeatShift, abs(info.edits.downbeatShift) == 1 ? "" : "s"))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Ink.overridden)
                 }
             }
             Divider().frame(height: 16)
@@ -95,7 +95,7 @@ struct TrackDetail: View {
             }), in: -6...6) {
                 Text("Key shift \(track.keyShift == 0 ? "0" : String(format: "%+d", track.keyShift))"
                      + (track.key.map { " → \($0)" } ?? ""))
-                    .foregroundStyle(track.keyShift == 0 ? Color.primary : .orange)
+                    .foregroundStyle(Color.primary)
             }
             .fixedSize()
             Spacer()
@@ -107,7 +107,7 @@ struct TrackDetail: View {
     }
 
     private func cueRow(_ info: TrackMixInfo) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.s) {
             Text("Hot cues").font(.caption).foregroundStyle(.secondary)
             ForEach(0..<8, id: \.self) { n in
                 let cue = info.edits.cues[n]
@@ -116,9 +116,10 @@ struct TrackDetail: View {
                     else { edit("Set Hot Cue") { $0.cues[n] = preview.caret / info.baseGrid.sampleRate } }
                 } label: {
                     Text("\(n + 1)").frame(width: 18)
+                        .foregroundStyle(cue == nil ? Color.primary : Ink.onCue)
                 }
-                .tint(cue == nil ? nil : .orange)
                 .buttonStyle(.bordered)
+                .background(cue == nil ? nil : RoundedRectangle(cornerRadius: Radius.medium, style: .continuous).fill(Ink.cue))
                 .contextMenu {
                     Button("Set to Marker") { edit("Set Hot Cue") { $0.cues[n] = preview.caret / info.baseGrid.sampleRate } }
                     Button("Clear") { edit("Clear Hot Cue") { $0.cues[n] = nil } }.disabled(cue == nil)
@@ -190,7 +191,7 @@ struct StructureEditor: View {
             ZStack(alignment: .topLeading) {
                 Canvas { ctx, size in draw(ctx, size) }
                 TimelineView(.periodic(from: .now, by: 1.0 / 20)) { _ in
-                    Rectangle().fill(Color.white).frame(width: 1.5, height: geo.size.height)
+                    Rectangle().fill(Ink.playhead).frame(width: 1.5, height: geo.size.height)
                         .offset(x: x(preview.position, w))
                         .allowsHitTesting(false)
                 }
@@ -206,8 +207,8 @@ struct StructureEditor: View {
             }
             .contextMenu { menu(w) }
         }
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color.black.opacity(0.85)))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .background(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous).fill(Ink.canvas))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
     }
 
     private func x(_ frame: Double, _ w: CGFloat) -> CGFloat { CGFloat(frame / Double(max(grid.frames, 1))) * w }
@@ -224,6 +225,7 @@ struct StructureEditor: View {
         // Waveform.
         let n = wave.peak.count
         let mid = waveTop + waveH / 2
+        let dark = ctx.environment.colorScheme == .dark
         if n > 0 {
             let cols = max(1, Int(size.width))
             for c in 0..<cols {
@@ -232,8 +234,7 @@ struct StructureEditor: View {
                 for i in a..<min(b, n) {
                     pk = max(pk, wave.peak[i]); lo += Int(wave.low[i]); mi += Int(wave.mid[i]); hi += Int(wave.high[i])
                 }
-                let total = Double(max(lo + mi + hi, 1))
-                let colour = Color(red: Double(lo) / total * 1.6, green: Double(mi) / total * 1.4, blue: Double(hi) / total * 2.2)
+                let colour = Palette.waveform(low: Double(lo), mid: Double(mi), high: Double(hi), dark: dark)
                 let h = Double(pk) / 255 * (waveH / 2 - 2)
                 ctx.fill(Path(CGRect(x: Double(c), y: mid - h, width: 1, height: max(h * 2, 1))), with: .color(colour))
             }
@@ -244,10 +245,10 @@ struct StructureEditor: View {
         while grid.barFrame(Double(b)) < Double(grid.frames) {
             let px = x(grid.barFrame(Double(b)), size.width)
             if b % 8 == phrase % 8 || b == 0 {
-                ctx.fill(Path(CGRect(x: px, y: waveTop, width: 0.5, height: waveH)), with: .color(.white.opacity(0.2)))
+                ctx.fill(Path(CGRect(x: px, y: waveTop, width: 0.5, height: waveH)), with: .color(Ink.onCanvas.opacity(0.2)))
             }
             if b % 16 == 0 {
-                ctx.draw(Text("\(b + 1)").font(.system(size: 8)).foregroundStyle(.white.opacity(0.6)),
+                ctx.draw(Text("\(b + 1)").font(.system(size: 8)).foregroundStyle(Ink.onCanvas.opacity(0.6)),
                          at: CGPoint(x: px + 2, y: rulerH / 2), anchor: .leading)
             }
             b += 4
@@ -263,17 +264,17 @@ struct StructureEditor: View {
             for i in s.sections.indices.dropFirst() {
                 let px = x(grid.barFrame(Double(s.sections[i].startBar)), size.width)
                 ctx.fill(Path(CGRect(x: px - 1, y: waveTop, width: 2, height: size.height - waveTop)),
-                         with: .color(.white.opacity(drag?.index == i ? 0.9 : 0.45)))
+                         with: .color(Ink.onCanvas.opacity(drag?.index == i ? 0.9 : 0.45)))
             }
         }
         // Cues and the marker.
         let cues = info.edits.cues.enumerated().compactMap { n, c in c.map { (n + 1, x($0 * grid.sampleRate, size.width)) } }
         SectionStrip.drawCues(ctx, cues, top: waveTop, height: waveH)
         let cx = x(preview.caret, size.width)
-        ctx.fill(Path(CGRect(x: cx - 0.5, y: 0, width: 1, height: size.height)), with: .color(.white.opacity(0.8)))
+        ctx.fill(Path(CGRect(x: cx - 0.5, y: 0, width: 1, height: size.height)), with: .color(Ink.playhead.opacity(0.8)))
         ctx.fill(Path { p in
             p.move(to: CGPoint(x: cx - 4, y: 0)); p.addLine(to: CGPoint(x: cx + 4, y: 0)); p.addLine(to: CGPoint(x: cx, y: 6))
-        }, with: .color(.white))
+        }, with: .color(Ink.playhead))
     }
 
     // MARK: Editing

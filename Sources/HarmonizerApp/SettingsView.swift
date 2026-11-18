@@ -36,14 +36,14 @@ struct StorageSettings: View {
     var body: some View {
         Form {
             Section {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Space.s) {
                     HStack {
                         Text("Separated stems")
                         Spacer()
                         Text("\(bytes(stemBytes)) of \(bytes(cap)) · \(entries.count) songs").foregroundStyle(.secondary)
                     }
                     ProgressView(value: Double(stemBytes), total: Double(max(cap, 1)))
-                        .tint(Double(stemBytes) > 0.9 * Double(cap) ? .orange : .accentColor)
+                        .tint(Double(stemBytes) > 0.9 * Double(cap) ? Ink.warning : Ink.accent)
                 }
                 Picker("Keep up to", selection: Binding(get: { cap }, set: { v in
                     cap = v; StemCache.shared.capBytes = v; reload()

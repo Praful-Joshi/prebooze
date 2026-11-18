@@ -76,7 +76,7 @@ final class TransitionEditorModel: ObservableObject {
         if playing && follow { return }
         if let i = transitions.firstIndex(where: { $0.info.from == id })
             ?? transitions.firstIndex(where: { $0.info.to == id }) {
-            withAnimation(.smooth(duration: 0.45)) { show(i) }
+            withAnimation(Motion.glide) { show(i) }
         }
     }
 
@@ -207,7 +207,7 @@ final class TransitionEditorModel: ObservableObject {
             building = false
             buildError = nil
             if let latest = draft { ready.update(spec: latest) }
-            withAnimation(.smooth(duration: 0.45)) { session = ready }
+            withAnimation(Motion.glide) { session = ready }
             if loop { ready.setLoop(0..<ready.length) }
             return
         }
@@ -223,7 +223,7 @@ final class TransitionEditorModel: ObservableObject {
             switch result {
             case let .success(s):
                 if let latest = self.draft { s.update(spec: latest) }
-                withAnimation(.smooth(duration: 0.35)) { self.session = s }
+                withAnimation(Motion.glide) { self.session = s }
                 if self.loop { s.setLoop(0..<s.length) }
             case let .failure(e):
                 self.buildError = (e as? LocalizedError)?.errorDescription
@@ -297,7 +297,7 @@ final class TransitionEditorModel: ObservableObject {
               let target = Self.transition(at: player.position, in: layout) else { return }
         if target != index {
             followMoves += 1
-            withAnimation(.smooth(duration: 0.45)) { show(target) }
+            withAnimation(Motion.glide) { show(target) }
         } else if let w = layout.windows[safe: index], player.position >= w.globalStart {
             prefetchNext()
         }

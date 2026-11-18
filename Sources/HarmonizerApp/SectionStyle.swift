@@ -2,15 +2,7 @@ import HarmonizerCore
 import SwiftUI
 
 extension SectionLabel {
-    var colour: Color {
-        switch self {
-        case .intro: Color(red: 0.25, green: 0.65, blue: 0.62)
-        case .build: Color(red: 0.92, green: 0.72, blue: 0.22)
-        case .drop: Color(red: 0.90, green: 0.32, blue: 0.40)
-        case .breakdown: Color(red: 0.40, green: 0.48, blue: 0.90)
-        case .outro: Color(red: 0.45, green: 0.62, blue: 0.40)
-        }
-    }
+    var colour: Color { Ink.section(self) }
 }
 
 enum SectionStrip {
@@ -25,9 +17,9 @@ enum SectionStrip {
             guard let l = current, end > runStart else { return }
             let r = CGRect(x: runStart, y: y, width: end - runStart, height: height)
             ctx.fill(Path(r), with: .color(l.colour.opacity(0.85)))
-            ctx.fill(Path(CGRect(x: runStart, y: y, width: 1, height: height)), with: .color(.black.opacity(0.35)))
+            ctx.fill(Path(CGRect(x: runStart, y: y, width: 1, height: height)), with: .color(Ink.onSection.opacity(0.35)))
             if names, end - runStart > 34 {
-                ctx.draw(Text(l.title).font(.system(size: 9, weight: .semibold)).foregroundStyle(.black.opacity(0.8)),
+                ctx.draw(Text(l.title).font(.system(size: 9, weight: .semibold)).foregroundStyle(Ink.onSection.opacity(0.85)),
                          at: CGPoint(x: runStart + 3, y: y + height / 2), anchor: .leading)
             }
         }
@@ -46,9 +38,9 @@ enum SectionStrip {
     /// Small numbered flags for hot cues at the given x positions.
     static func drawCues(_ ctx: GraphicsContext, _ cues: [(Int, CGFloat)], top: CGFloat, height: CGFloat) {
         for (n, x) in cues {
-            ctx.fill(Path(CGRect(x: x, y: top, width: 1, height: height)), with: .color(.orange))
-            ctx.fill(Path(roundedRect: CGRect(x: x, y: top, width: 11, height: 11), cornerRadius: 2), with: .color(.orange))
-            ctx.draw(Text("\(n)").font(.system(size: 8, weight: .bold)).foregroundStyle(.black),
+            ctx.fill(Path(CGRect(x: x, y: top, width: 1, height: height)), with: .color(Ink.cue))
+            ctx.fill(Path(roundedRect: CGRect(x: x, y: top, width: 11, height: 11), cornerRadius: Radius.hair, style: .continuous), with: .color(Ink.cue))
+            ctx.draw(Text("\(n)").font(.system(size: 8, weight: .bold)).foregroundStyle(Ink.onCue),
                      at: CGPoint(x: x + 5.5, y: top + 5.5))
         }
     }
@@ -95,7 +87,7 @@ extension SectionStrip {
         for c in 0..<cols {
             guard let a = src[c], let b = src[c + 1], b > a else { continue }
             if info.isLooped(atMixSource: a) {
-                ctx.fill(Path(CGRect(x: x0 + CGFloat(c), y: stripY - 3, width: 1, height: 3)), with: .color(.white.opacity(0.8)))
+                ctx.fill(Path(CGRect(x: x0 + CGFloat(c), y: stripY - 3, width: 1, height: 3)), with: .color(Ink.onCanvas.opacity(0.8)))
             }
             cues += info.cues(inMixSource: a, b).map { ($0, x0 + CGFloat(c)) }
         }

@@ -22,8 +22,8 @@ struct LaneRow: View {
     }
 
     private let pad: CGFloat = 6
-    private let outColour = Color(red: 1, green: 0.55, blue: 0.15)
-    private let inColour = Color(red: 0.35, green: 0.65, blue: 1)
+    private let outColour = Ink.outgoing
+    private let inColour = Ink.incoming
 
     private var settings: LaneSettings? { spec.lane(lane) }
 
@@ -34,7 +34,7 @@ struct LaneRow: View {
                 .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .local)
                     .onChanged { v in changed(v, height: geometryHeight) }
                     .onEnded { v in ended(v, height: geometryHeight) })
-            header.frame(width: geometry.labelWidth - 6, alignment: .leading).padding(.leading, 6).padding(.top, 4)
+            header.frame(width: geometry.labelWidth - 6, alignment: .leading).padding(.leading, Space.s).padding(.top, Space.xs)
         }
         .background(GeometryReader { g in Color.clear.preference(key: HeightKey.self, value: g.size.height) })
         .onPreferenceChange(HeightKey.self) { geometryHeight = $0 }
@@ -58,14 +58,14 @@ struct LaneRow: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 3) {
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            HStack(spacing: Space.xs) {
                 Text(lane.title).font(.caption.bold())
                 if !headerHover { Text(glyph).font(.caption2).foregroundStyle(.secondary) }
             }
             if headerHover { headerMenu.fixedSize().transition(.opacity) }
         }
-        .onHover { h in withAnimation(.easeOut(duration: 0.15)) { headerHover = h } }
+        .onHover { h in withAnimation(Motion.hover) { headerHover = h } }
     }
 
     private var headerMenu: some View {
@@ -135,7 +135,7 @@ struct LaneRow: View {
         let h = size.height
         let g = geometry
         let x0 = g.x(Double(session.outSpan.lowerBound)), x1 = g.x(Double(session.inSpan.upperBound))
-        ctx.fill(Path(CGRect(x: x0, y: 0, width: x1 - x0, height: h)), with: .color(.accentColor.opacity(0.06)))
+        ctx.fill(Path(CGRect(x: x0, y: 0, width: x1 - x0, height: h)), with: .color(Ink.onCanvas.opacity(0.04)))
         if lane.neutral > 0 && lane.neutral < 1 {   // filter: mark "open"
             var mid = Path(); mid.move(to: CGPoint(x: g.labelWidth, y: y(0.5, h))); mid.addLine(to: CGPoint(x: size.width, y: y(0.5, h)))
             ctx.stroke(mid, with: .color(.secondary.opacity(0.4)), style: StrokeStyle(lineWidth: 0.5, dash: [3, 3]))
@@ -163,7 +163,7 @@ struct LaneRow: View {
             }
         }
         ctx.fill(Path(CGRect(x: 0, y: 0, width: g.labelWidth, height: h)),
-                 with: .color(Color(nsColor: .underPageBackgroundColor)))
+                 with: .color(Ink.canvas))
     }
 
     // MARK: Editing

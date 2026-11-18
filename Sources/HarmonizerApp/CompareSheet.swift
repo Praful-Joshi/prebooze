@@ -16,14 +16,14 @@ struct CompareSheet: View {
     private var project: MixProject { document.project }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.l) {
             Text("Compare with another order").font(.title2.bold())
             Text("Paste the order, one track per line (\"Artist - Title\" or just the title).")
                 .foregroundStyle(.secondary)
             TextEditor(text: $text)
                 .font(.callout.monospaced())
                 .frame(height: 180)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(.quaternary))
+                .overlay(RoundedRectangle(cornerRadius: Radius.small, style: .continuous).stroke(.quaternary))
                 .onChange(of: text) { scored = false }
 
             if scored { results }
@@ -39,7 +39,7 @@ struct CompareSheet: View {
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
-        .padding(20)
+        .padding(Space.xxl)
         .frame(width: 620)
     }
 
@@ -63,11 +63,11 @@ struct CompareSheet: View {
              : "Both orders score the same.")
             .font(.callout)
         if !unmatched.isEmpty {
-            Text("Couldn't match: " + unmatched.joined(separator: "; ")).foregroundStyle(.orange).font(.caption)
+            Text("Couldn't match: " + unmatched.joined(separator: "; ")).foregroundStyle(Ink.warning).font(.caption)
         }
         if !missing.isEmpty {
             Text("In the mix but not in the pasted list: " + missing.map(\.title).joined(separator: ", "))
-                .foregroundStyle(.orange).font(.caption)
+                .foregroundStyle(Ink.warning).font(.caption)
         }
     }
 
