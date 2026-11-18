@@ -80,7 +80,7 @@ struct EditorCanvas: View {
             let s = session
             ctx.fill(Path(CGRect(x: g.x(Double(s.outSpan.lowerBound)), y: 0,
                                  width: g.x(Double(s.inSpan.upperBound)) - g.x(Double(s.outSpan.lowerBound)),
-                                 height: size.height)), with: .color(.accentColor.opacity(0.18)))
+                                 height: size.height)), with: .color(Ink.onCanvas.opacity(0.1)))
             for (frame, bar) in s.barMarks {
                 let x = g.x(Double(frame))
                 guard x >= g.labelWidth else { continue }
@@ -125,12 +125,12 @@ struct EditorCanvas: View {
                     if windowDrag?.kind == .end || windowDrag?.kind == .move { x1 += shift }
                 }
                 let rect = CGRect(x: x0, y: 2, width: max(x1 - x0, 1), height: size.height - 4)
-                ctx.stroke(Path(roundedRect: rect, cornerRadius: 4), with: .color(.accentColor), lineWidth: 1.5)
-                ctx.fill(Path(roundedRect: rect, cornerRadius: 4), with: .color(.accentColor.opacity(0.08)))
+                ctx.stroke(Path(roundedRect: rect, cornerRadius: Radius.small, style: .continuous), with: .color(Ink.accent), lineWidth: 1.5)
+                ctx.fill(Path(roundedRect: rect, cornerRadius: Radius.small, style: .continuous), with: .color(Ink.accent.opacity(0.08)))
                 if isOut {
                     for hx in [x0, x1] {
                         ctx.fill(Path(roundedRect: CGRect(x: hx - 3, y: size.height / 2 - 12, width: 6, height: 24),
-                                      cornerRadius: 2), with: .color(.accentColor))
+                                      cornerRadius: Radius.hair, style: .continuous), with: .color(Ink.accent))
                     }
                 } else if windowDrag?.kind == .incoming {
                     ctx.draw(Text(String(format: "%+d bars", -(windowDrag?.bars ?? 0))).font(.caption.bold()),
@@ -138,7 +138,7 @@ struct EditorCanvas: View {
                 }
                 if !isOut { drawDelay(ctx, size, g) }
                 ctx.fill(Path(CGRect(x: 0, y: 0, width: g.labelWidth, height: size.height)),
-                         with: .color(Color(nsColor: .underPageBackgroundColor)))
+                         with: .color(Ink.canvas))
                 ctx.draw(Text(isOut ? "Out" : "In").font(.caption.bold()).foregroundStyle(.secondary),
                          at: CGPoint(x: 8, y: size.height / 2), anchor: .leading)
                 if let info = isOut ? model.infos?.out : model.infos?.inc {
@@ -158,6 +158,7 @@ struct EditorCanvas: View {
         guard n > 0 else { return }
         let mid = size.height / 2
         let cols = Int(g.plotWidth)
+        let dark = ctx.environment.colorScheme == .dark
         for c in 0..<cols {
             let a = c * n / cols, b = max(a + 1, (c + 1) * n / cols)
             var pk: UInt8 = 0, lo = 0, mi = 0, hi = 0
@@ -165,8 +166,7 @@ struct EditorCanvas: View {
                 pk = max(pk, wave.peak[i]); lo += Int(wave.low[i]); mi += Int(wave.mid[i]); hi += Int(wave.high[i])
             }
             guard pk > 0 else { continue }
-            let total = Double(max(lo + mi + hi, 1))
-            let colour = Color(red: Double(lo) / total * 1.6, green: Double(mi) / total * 1.4, blue: Double(hi) / total * 2.2)
+            let colour = Palette.waveform(low: Double(lo), mid: Double(mi), high: Double(hi), dark: dark)
             let h = Double(pk) / 255 * (mid - 3)
             ctx.fill(Path(CGRect(x: g.labelWidth + CGFloat(c), y: mid - h, width: 1, height: max(h * 2, 1))),
                      with: .color(colour))
@@ -237,16 +237,16 @@ struct EditorCanvas: View {
     private func drawDeckHeader(_ ctx: GraphicsContext, _ info: TrackMixInfo, _ g: EditorGeometry, trailing: CGFloat? = nil) {
         let t = info.track
         var parts = [t.title]
-        if let k = t.key { parts.append(k.description + (t.keyShift != 0 ? String(format: " (%+d)", t.keyShift) : "")) }
+        if let k = t.key { parts.append(k.description + (t.keyShift != 0 ? String(format: " ↕ %+d", t.keyShift) : "")) }
         if let b = t.bpm { parts.append(String(format: "%g BPM", (b * 10).rounded() / 10)) }
         let text = ctx.resolve(Text(parts.joined(separator: " · ")).font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(.white))
+            .foregroundStyle(Ink.onBadge))
         let size = text.measure(in: CGSize(width: 600, height: 20))
         let w = size.width + 12
         let r = CGRect(x: trailing.map { $0 - w - 8 } ?? g.labelWidth + 4, y: 3, width: w, height: size.height + 4)
-        ctx.fill(Path(roundedRect: r, cornerRadius: r.height / 2), with: .color(.black.opacity(0.55)))
+        ctx.fill(Capsule().path(in: r), with: .color(Ink.badge.opacity(0.6)))
         if let k = t.key {
-            ctx.fill(Path(roundedRect: CGRect(x: r.minX, y: r.minY, width: 4, height: r.height), cornerRadius: 2),
+            ctx.fill(Path(roundedRect: CGRect(x: r.minX, y: r.minY, width: 4, height: r.height), cornerRadius: Radius.hair, style: .continuous),
                      with: .color(k.wheelColour))
         }
         ctx.draw(text, at: CGPoint(x: r.minX + 7, y: r.midY), anchor: .leading)
@@ -267,19 +267,19 @@ struct EditorCanvas: View {
             while x < r.maxX { hatch.move(to: CGPoint(x: x, y: r.maxY)); hatch.addLine(to: CGPoint(x: x + r.height, y: r.minY)); x += 7 }
             ctx.drawLayer { l in
                 l.clip(to: Path(r))
-                l.stroke(hatch, with: .color(.white.opacity(0.12)), lineWidth: 1)
+                l.stroke(hatch, with: .color(Ink.onCanvas.opacity(0.14)), lineWidth: 1)
             }
-            ctx.stroke(Path(roundedRect: r, cornerRadius: 4), with: .color(.white.opacity(0.25)),
+            ctx.stroke(Path(roundedRect: r, cornerRadius: Radius.small, style: .continuous), with: .color(Ink.onCanvas.opacity(0.3)),
                        style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
             if r.width > 40 {
                 ctx.draw(Text(String(format: "+%g beat%@", (beats * 100).rounded() / 100, beats == 1 ? "" : "s"))
-                            .font(.caption2.bold()).foregroundStyle(.white.opacity(0.8)),
+                            .font(.caption2.bold()).foregroundStyle(Ink.onCanvas.opacity(0.8)),
                          at: CGPoint(x: r.midX, y: r.midY))
             }
         }
         // Delay handle on the incoming box's left edge.
-        ctx.fill(Path(roundedRect: CGRect(x: edge - 3, y: size.height / 2 - 12, width: 6, height: 24), cornerRadius: 2),
-                 with: .color(Color(red: 0.35, green: 0.65, blue: 1)))
+        ctx.fill(Path(roundedRect: CGRect(x: edge - 3, y: size.height / 2 - 12, width: 6, height: 24), cornerRadius: Radius.hair, style: .continuous),
+                 with: .color(Ink.incoming))
     }
 
     // MARK: Lanes
@@ -310,13 +310,13 @@ struct EditorCanvas: View {
                 .popover(isPresented: $showHint, arrowEdge: .top) { gestureHelp }
                 .onAppear { if !hintSeen { DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { showHint = true; hintSeen = true } } }
         }
-        .padding(.horizontal, 8).frame(height: 30)
+        .padding(.horizontal, Space.m).frame(height: 30)
     }
 }
 
 extension EditorCanvas {
     var gestureHelp: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Space.s) {
             Text("Editing a transition").font(.headline)
             Group {
                 Label("Drag the box edges to change the length; drag inside to move it", systemImage: "arrow.left.and.right")
@@ -327,7 +327,7 @@ extension EditorCanvas {
             }
             .font(.callout)
         }
-        .padding(14).frame(width: 380)
+        .padding(Space.xl).frame(width: 380)
     }
 }
 
@@ -340,7 +340,7 @@ struct Playhead: View {
         TimelineView(.periodic(from: .now, by: 1.0 / 30)) { _ in
             let pos = Double(model.position)
             let x = geometry.x(pos)
-            Rectangle().fill(Color.white).frame(width: 1.5)
+            Rectangle().fill(Ink.playhead).frame(width: 1.5)
                 .offset(x: x)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .allowsHitTesting(false)

@@ -8,9 +8,10 @@ struct HarmonizerApp: App {
     @ObservedObject private var outputs = AudioOutputs.shared
 
     var body: some Scene {
-        Settings { SettingsView().onAppear { _ = AudioOutputs.shared } }
+        Settings { SettingsView().tint(Ink.accent).onAppear { _ = AudioOutputs.shared } }
         DocumentGroup(newDocument: { MixDocument() }) { file in
             ContentView(document: file.document)
+                .tint(Ink.accent)
                 .frame(minWidth: 1200, minHeight: 720)
         }
         .commands {

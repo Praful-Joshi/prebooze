@@ -38,14 +38,14 @@ struct TransitionEditorView: View {
                         placeholder(model.plans.isEmpty ? "Waiting for analysis…" : "Preparing transition…")
                     }
                     if model.building && model.session != nil {
-                        ProgressView().controlSize(.small).padding(8)
+                        ProgressView().controlSize(.small).padding(Space.m)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     }
                 }
                 .clipped()
             }
         }
-        .background(Color(nsColor: .underPageBackgroundColor))
+        .background(Ink.canvas)
     }
 
     private func placeholder(_ text: String) -> some View {
@@ -54,15 +54,15 @@ struct TransitionEditorView: View {
 
     /// While locked the canvas only listens enough to say why nothing moves.
     private var lockedShield: some View {
-        Color.orange.opacity(0.04)
+        Ink.accent.opacity(0.04)
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 2).onEnded { _ in lockedNudge.toggle() })
             .onTapGesture { lockedNudge.toggle() }
             .overlay(alignment: .top) {
                 Label("Locked. Click 🔒 above to edit.", systemImage: "lock.fill")
-                    .font(.caption).padding(.horizontal, 10).padding(.vertical, 4)
+                    .font(.caption).padding(.horizontal, Space.l).padding(.vertical, Space.xs)
                     .background(.regularMaterial, in: Capsule())
-                    .padding(.top, 6)
+                    .padding(.top, Space.s)
                     .allowsHitTesting(false)
             }
     }
@@ -72,7 +72,7 @@ struct TransitionEditorView: View {
     private func titleLine(_ t: ResolvedTransition, _ spec: TransitionSpec) -> some View {
         let byId = Dictionary(uniqueKeysWithValues: document.project.tracks.map { ($0.id, $0) })
         let a = byId[t.info.from], b = byId[t.info.to]
-        return HStack(spacing: 8) {
+        return HStack(spacing: Space.m) {
             HStack(spacing: 0) {
                 Button { model.select(model.index - 1) } label: { Image(systemName: "chevron.left").frame(width: 18) }
                     .disabled(model.index == 0).keyboardShortcut(.leftArrow, modifiers: .option)
@@ -86,16 +86,16 @@ struct TransitionEditorView: View {
             deckTitle(a)
             Image(systemName: "arrow.right").font(.caption).foregroundStyle(.tertiary)
             deckTitle(b)
-            HStack(spacing: 4) {
-                Circle().fill(t.info.label.colour.swiftUI).frame(width: 7, height: 7)
+            HStack(spacing: Space.xs) {
+                Circle().fill(Ink.legacyMatch(t.info.label.colour)).frame(width: 7, height: 7)
                 Text(t.info.label.label)
             }
-            .font(.caption).padding(.horizontal, 7).padding(.vertical, 2)
+            .font(.caption).padding(.horizontal, Space.s).padding(.vertical, Space.xxs)
             .background(Capsule().fill(.quaternary))
             .help("Auto: \(t.reason)")
             Spacer(minLength: 6)
             if let plan = model.plan, !plan.warnings.isEmpty {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Ink.warning)
                     .help(plan.warnings.joined(separator: "\n"))
             }
             if !spec.isLocked, let fix = document.project.suggestKeyShift(forTransition: model.index) {
@@ -120,23 +120,23 @@ struct TransitionEditorView: View {
             Button { model.setLocked(!spec.isLocked, undo: undo) } label: {
                 Image(systemName: spec.isLocked ? "lock.fill" : "lock.open")
                     .contentTransition(.symbolEffect(.replace))
-                    .foregroundStyle(spec.isLocked ? Color.orange : .secondary)
+                    .foregroundStyle(spec.isLocked ? Ink.accent : .secondary)
             }
             .buttonStyle(.borderless)
             .help(spec.isLocked ? "Locked: placement frozen, songs kept together. Click to unlock."
                                 : "Lock: freeze this transition as it is and keep these two songs together")
         }
-        .animation(.smooth(duration: 0.25), value: spec)
-        .padding(.horizontal, 10).padding(.top, 7).padding(.bottom, 4)
+        .animation(Motion.fade, value: spec)
+        .padding(.horizontal, Space.l).padding(.top, Space.s).padding(.bottom, Space.xs)
     }
 
     private func deckTitle(_ t: ProjectTrack?) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xs) {
             Text(t?.title ?? "?").font(.headline).lineLimit(1)
             if let k = t?.key {
                 Text(k.description).font(.caption2.monospacedDigit().bold())
-                    .padding(.horizontal, 4).padding(.vertical, 1)
-                    .background(RoundedRectangle(cornerRadius: 3).fill(k.wheelColour.opacity(0.35)))
+                    .padding(.horizontal, Space.xs).padding(.vertical, Space.xxs)
+                    .background(RoundedRectangle(cornerRadius: Radius.small, style: .continuous).fill(k.wheelColour.opacity(0.35)))
             }
         }
         .help([t?.artist, t?.bpm.map { String(format: "%g BPM", ($0 * 100).rounded() / 100) },
@@ -150,7 +150,7 @@ struct TransitionEditorView: View {
         let project = document.project
         let byId = Dictionary(uniqueKeysWithValues: project.tracks.map { ($0.id, $0) })
         let a = model.current.flatMap { byId[$0.info.from] }, b = model.current.flatMap { byId[$0.info.to] }
-        return HStack(spacing: 8) {
+        return HStack(spacing: Space.m) {
             PresetSegments(selected: hasManual(spec) ? nil : spec.preset) { model.applyPreset($0, undo: undo) }
             myPresetsMenu(spec)
             Chip(title: "\(spec.bars) bar\(spec.bars == 1 ? "" : "s")", help: "Length (scroll to change)",
@@ -198,7 +198,7 @@ struct TransitionEditorView: View {
             if LaneKind.stems.contains(where: { spec.lane($0) != nil }) { stemStatus(a, b) }
             Spacer()
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: spec)
+        .animation(Motion.snap, value: spec)
         .disabled(spec.isLocked)
         .onReceive(NotificationCenter.default.publisher(for: PresetStore.changed)) { _ in userPresets = PresetStore.shared.presets }
         .alert("Save as Preset", isPresented: $savingPreset) {
@@ -212,7 +212,7 @@ struct TransitionEditorView: View {
             Text("Saves this transition's lanes, length and sync for every project.")
         }
         .controlSize(.small)
-        .padding(.horizontal, 10).padding(.bottom, 7)
+        .padding(.horizontal, Space.l).padding(.bottom, Space.s)
     }
 
     private func myPresetsMenu(_ spec: TransitionSpec) -> some View {
@@ -247,15 +247,15 @@ struct TransitionEditorView: View {
         let working = states.compactMap { if case let .separating(p) = $0 { p } else { nil } }.first
         Group {
             if states.allSatisfy({ $0 == .ready }) {
-                Label("Stems", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                Label("Stems", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
                     .help("Both songs are separated into drums, bass, melody and vocals")
             } else if let failed {
                 Button { [a, b].compactMap { $0?.contentHash }.forEach(stems.retry); stems.request([a, b].compactMap { $0 }, urgent: true) } label: {
-                    Label("Stems failed: retry", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    Label("Stems failed: retry", systemImage: "exclamationmark.triangle.fill").foregroundStyle(Ink.warning)
                 }
                 .buttonStyle(.borderless).help(failed)
             } else {
-                HStack(spacing: 5) {
+                HStack(spacing: Space.s) {
                     ProgressView(value: working ?? 0).progressViewStyle(.circular).controlSize(.mini)
                     Text(stems.preparingModel ? "Preparing model…"
                          : working.map { String(format: "Separating stems %d%%", Int($0 * 100)) } ?? "Stems queued")
@@ -352,13 +352,13 @@ struct PresetSegments: View {
             ForEach(Array(TransitionConfig.shared.presets.enumerated()), id: \.offset) { i, p in
                 Button { apply(p.name) } label: {
                     Text(p.name).font(.caption.weight(selected == p.name ? .semibold : .regular))
-                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .padding(.horizontal, Space.m).padding(.vertical, Space.xs)
                         .background {
                             if selected == p.name {
-                                Capsule().fill(Color.accentColor.opacity(0.85)).matchedGeometryEffect(id: "sel", in: ns)
+                                Capsule().fill(Ink.accent).matchedGeometryEffect(id: "sel", in: ns)
                             }
                         }
-                        .foregroundStyle(selected == p.name ? Color.white : .primary)
+                        .foregroundStyle(selected == p.name ? Ink.onAccent : .primary)
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -366,9 +366,9 @@ struct PresetSegments: View {
                 .help("\(p.name) (⌥\(i + 1))")
             }
         }
-        .padding(2)
+        .padding(Space.xxs)
         .background(Capsule().fill(.quaternary))
-        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: selected)
+        .animation(Motion.snap, value: selected)
     }
 }
 
@@ -388,11 +388,11 @@ struct Chip<Content: View>: View {
         }
         .menuStyle(.button)
         .buttonStyle(.bordered)
-        .tint(accent ? .accentColor : nil)
+        .tint(accent ? Ink.accent : nil)
         .fixedSize()
         .scaleEffect(hover ? 1.04 : 1)
-        .shadow(color: .black.opacity(hover ? 0.2 : 0), radius: 3, y: 1)
-        .onHover { h in withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { hover = h } }
+        .shadow(color: Ink.shadow.opacity(hover ? 0.2 : 0), radius: 3, y: 1)
+        .onHover { h in withAnimation(Motion.pop) { hover = h } }
         .background(ScrollStepper(active: hover && step != nil) { step?($0) })
         .help(help)
     }

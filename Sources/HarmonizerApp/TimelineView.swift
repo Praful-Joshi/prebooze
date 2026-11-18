@@ -70,17 +70,17 @@ struct MixTimelineView: View {
                     })
                     .overlay(alignment: .bottomTrailing) {
                         if zoom > 0 {
-                            Button { withAnimation(.smooth) { zoom = 0 } } label: {
+                            Button { withAnimation(Motion.glide) { zoom = 0 } } label: {
                                 Image(systemName: "arrow.left.and.right.square")
                             }
                             .buttonStyle(.borderless)
-                            .padding(5).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
-                            .padding(6)
+                            .padding(Space.s).background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+                            .padding(Space.s)
                             .help("Fit the whole mix (pinch or ⌘-scroll to zoom)")
                             .transition(.scale.combined(with: .opacity))
                         }
                     }
-                    .animation(.smooth(duration: 0.2), value: zoom > 0)
+                    .animation(Motion.fade, value: zoom > 0)
                 }
                 .frame(height: rulerH + 2 * rowH + bandH + 8)
             } else {
@@ -99,7 +99,7 @@ struct MixTimelineView: View {
         let a = CGFloat(Double(r.lowerBound) / mixSampleRate * pps), b = CGFloat(Double(r.upperBound) / mixSampleRate * pps)
         let target = b - a <= viewWidth * 0.9 ? (a + b) / 2 - viewWidth / 2 : a - viewWidth * 0.05
         lastReveal = .now
-        withAnimation(.smooth(duration: 0.5)) { scroll.scrollTo(x: min(max(0, target), contentWidth - viewWidth)) }
+        withAnimation(Motion.glide) { scroll.scrollTo(x: min(max(0, target), contentWidth - viewWidth)) }
     }
 
     private func follow(pps: Double, viewWidth: CGFloat, contentWidth: CGFloat) {
@@ -110,7 +110,7 @@ struct MixTimelineView: View {
         let x = CGFloat(Double(player.position) / mixSampleRate * pps)
         guard x < scrollX + viewWidth * 0.05 || x > scrollX + viewWidth * 0.85 else { return }
         let target = min(max(0, x - viewWidth * 0.2), contentWidth - viewWidth)
-        withAnimation(.smooth(duration: 0.6)) { scroll.scrollTo(x: target) }
+        withAnimation(Motion.glide) { scroll.scrollTo(x: target) }
     }
 
     private func loadWaves() {
@@ -125,15 +125,15 @@ struct MixTimelineView: View {
             let fpx = mixSampleRate / pps
             if let d = deck(at: p, layout, x0: 0, fpx: fpx),
                let t = document.project.tracks.first(where: { $0.id == layout.decks[d].id }) {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(t.title).font(.caption.bold()).lineLimit(1)
                     Text([t.artist, t.key?.description, t.bpm.map { String(format: "%g BPM", ($0 * 100).rounded() / 100) }]
                         .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
-                .padding(.horizontal, 8).padding(.vertical, 5)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 7))
-                .shadow(color: .black.opacity(0.25), radius: 6, y: 2)
+                .padding(.horizontal, Space.m).padding(.vertical, Space.s)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+                .shadow(color: Ink.shadow.opacity(0.25), radius: 6, y: 2)
                 .offset(x: p.x + 12, y: max(0, p.y - 40))
                 .allowsHitTesting(false)
                 .transition(.opacity)
@@ -147,6 +147,7 @@ struct MixTimelineView: View {
         let fpx = mixSampleRate / pps   // frames per pixel
         let resolved = document.project.resolvedTransitions()
         return TimelineView(.animation(minimumInterval: 0.1, paused: !player.playing)) { _ in Canvas { ctx, size in
+            let dark = ctx.environment.colorScheme == .dark
             func x(_ frame: Int) -> CGFloat { CGFloat(Double(frame) / fpx) - x0 }
             // Ruler.
             let stepSecs = [5.0, 10, 30, 60, 120, 300, 600].first { $0 * pps >= 60 } ?? 600
@@ -165,8 +166,8 @@ struct MixTimelineView: View {
                 guard b >= 0, a <= size.width else { continue }
                 let selected = win.index == editor.index
                 let rect = CGRect(x: a, y: rulerH, width: max(b - a, 2), height: 2 * rowH + bandH + 4)
-                ctx.fill(Path(rect), with: .color(.accentColor.opacity(selected ? 0.28 : 0.12)))
-                if selected { ctx.stroke(Path(rect), with: .color(.accentColor), lineWidth: 1.5) }
+                ctx.fill(Path(rect), with: .color(selected ? Ink.accent.opacity(0.28) : Ink.onCanvas.opacity(0.07)))
+                if selected { ctx.stroke(Path(rect), with: .color(Ink.accent), lineWidth: 1.5) }
                 if win.index < resolved.count, b - a > 26 {
                     let r = resolved[win.index]
                     ctx.draw(Text("\(r.spec.isLocked ? "🔒 " : "")\(r.info.label.colour.emoji) \(r.spec.preset)")
@@ -180,11 +181,11 @@ struct MixTimelineView: View {
                 if player.playing, left > 0, left < approach {
                     let c = CGPoint(x: a, y: bandY + bandH / 2), rr: CGFloat = 7
                     ctx.stroke(Path(ellipseIn: CGRect(x: c.x - rr, y: c.y - rr, width: 2 * rr, height: 2 * rr)),
-                               with: .color(.white.opacity(0.2)), lineWidth: 2)
+                               with: .color(Ink.onCanvas.opacity(0.2)), lineWidth: 2)
                     var arc = Path()
                     arc.addArc(center: c, radius: rr, startAngle: .degrees(-90),
                                endAngle: .degrees(-90 + 360 * (1 - left / approach)), clockwise: false)
-                    ctx.stroke(arc, with: .color(.accentColor), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    ctx.stroke(arc, with: .color(Ink.accent), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 }
             }
             // Track blocks.
@@ -194,8 +195,8 @@ struct MixTimelineView: View {
                 guard b >= 0, a <= size.width else { continue }
                 let y = deck.index % 2 == 0 ? rulerH + 2 : rulerH + rowH + bandH + 6
                 let rect = CGRect(x: a, y: y, width: max(b - a, 1), height: rowH)
-                ctx.fill(Path(roundedRect: rect, cornerRadius: 4), with: .color(Color(white: 0.16)))
-                if let wave = waves[deck.id] { drawWave(ctx, wave, deck: deck, rect: rect, fpx: fpx, x0: x0, clip: size.width) }
+                ctx.fill(Path(roundedRect: rect, cornerRadius: Radius.small, style: .continuous), with: .color(Ink.block))
+                if let wave = waves[deck.id] { drawWave(ctx, wave, deck: deck, rect: rect, fpx: fpx, x0: x0, clip: size.width, dark: dark) }
                 if let info = player.infos[deck.id] {
                     let lo = max(rect.minX, 0), hi = min(rect.maxX, size.width)
                     if hi > lo {
@@ -207,13 +208,13 @@ struct MixTimelineView: View {
                 }
                 let pos = player.position
                 let isPlaying = deck.globalStart <= pos && pos < deck.globalEnd
-                if !isPlaying { ctx.fill(Path(roundedRect: rect, cornerRadius: 4), with: .color(.black.opacity(0.28))) }
-                ctx.stroke(Path(roundedRect: rect, cornerRadius: 4),
-                           with: .color(.white.opacity(isPlaying ? 0.7 : 0.18)), lineWidth: isPlaying ? 1.5 : 1)
+                if !isPlaying { ctx.fill(Path(roundedRect: rect, cornerRadius: Radius.small, style: .continuous), with: .color(Ink.shade.opacity(dark ? 0.28 : 0.35))) }
+                ctx.stroke(Path(roundedRect: rect, cornerRadius: Radius.small, style: .continuous),
+                           with: .color(Ink.onCanvas.opacity(isPlaying ? 0.7 : 0.18)), lineWidth: isPlaying ? 1.5 : 1)
                 let title = document.project.tracks.first { $0.id == deck.id }?.title ?? deck.url.lastPathComponent
                 // Title once, in the tile where the block begins (tiles are drawn separately).
                 if b - a > 40, a >= -1 || x0 == 0 {
-                    ctx.draw(Text("\(deck.index + 1). \(title)").font(.system(size: 10, weight: .semibold)).foregroundStyle(.white),
+                    ctx.draw(Text("\(deck.index + 1). \(title)").font(.system(size: 10, weight: .semibold)).foregroundStyle(Ink.onCanvas),
                              in: CGRect(x: max(a, 0) + 4, y: y + 2, width: min(b, size.width) - max(a, 0) - 8, height: 14))
                 }
             }
@@ -222,7 +223,7 @@ struct MixTimelineView: View {
         .frame(width: w, height: rulerH + 2 * rowH + bandH + 8)
         .contentShape(Rectangle())
         .onContinuousHover { phase in
-            withAnimation(.easeOut(duration: 0.12)) {
+            withAnimation(Motion.hover) {
                 if case let .active(p) = phase { hover = CGPoint(x: p.x + x0, y: p.y) } else { hover = nil }
             }
         }
@@ -234,7 +235,7 @@ struct MixTimelineView: View {
 
     /// Analysis waveform of a deck, mapped through its in/body/out parts.
     private func drawWave(_ ctx: GraphicsContext, _ wave: WaveformSummary, deck: MixLayout.Deck, rect: CGRect,
-                          fpx: Double, x0: CGFloat, clip: CGFloat) {
+                          fpx: Double, x0: CGFloat, clip: CGFloat, dark: Bool) {
         let n = wave.peak.count
         let nativeK = deck.grid.sampleRate / mixSampleRate   // mix frames → native frames
         let mid = rect.midY + 6, half = (rect.height - 16) / 2
@@ -264,8 +265,7 @@ struct MixTimelineView: View {
                 }
             }
             if pk > 0 {
-                let total = Double(max(l + m + h, 1))
-                let colour = Color(red: Double(l) / total * 1.6, green: Double(m) / total * 1.4, blue: Double(h) / total * 2.2)
+                let colour = Palette.waveform(low: Double(l), mid: Double(m), high: Double(h), dark: dark)
                 let height = CGFloat(Double(pk) / 255) * half
                 ctx.fill(Path(CGRect(x: px, y: mid - height, width: 1, height: max(height * 2, 1))), with: .color(colour))
             }
@@ -275,7 +275,7 @@ struct MixTimelineView: View {
 
     private func playhead(pps: Double) -> some View {
         TimelineView(.periodic(from: .now, by: 1.0 / 30)) { _ in
-            Rectangle().fill(Color.white).frame(width: 1.5)
+            Rectangle().fill(Ink.playhead).frame(width: 1.5)
                 .offset(x: CGFloat(Double(player.position) / mixSampleRate * pps))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .allowsHitTesting(false)

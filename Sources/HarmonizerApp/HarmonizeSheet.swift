@@ -14,16 +14,16 @@ struct HarmonizeSheet: View {
 
     /// A form row with an ⓘ that slides open a short explanation under it.
     private func explained(_ key: String, _ text: String, @ViewBuilder _ control: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.s) {
+            HStack(spacing: Space.m) {
                 control()
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                    withAnimation(Motion.snap) {
                         if open.contains(key) { open.remove(key) } else { open.insert(key) }
                     }
                 } label: {
                     Image(systemName: open.contains(key) ? "info.circle.fill" : "info.circle")
-                        .foregroundStyle(open.contains(key) ? Color.accentColor : .secondary)
+                        .foregroundStyle(open.contains(key) ? Ink.accent : .secondary)
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .buttonStyle(.borderless)
@@ -50,7 +50,7 @@ struct HarmonizeSheet: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: Space.xl) {
             Text("Harmonize").font(.title2.bold())
             Form {
                 explained("mode", Self.help["mode"]!) {
@@ -115,7 +115,7 @@ struct HarmonizeSheet: View {
             .onChange(of: settings) { preview = nil }
 
             if let error {
-                Text(error).foregroundStyle(.red).font(.callout)
+                Text(error).foregroundStyle(Ink.error).font(.callout)
             }
             comparison
 
@@ -131,7 +131,7 @@ struct HarmonizeSheet: View {
                 .disabled(working)
             }
         }
-        .padding(20)
+        .padding(Space.xxl)
         .frame(width: 560)
         .onAppear { settings = document.project.settings }
     }

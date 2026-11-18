@@ -65,11 +65,11 @@ struct ContentView: View {
         .sheet(isPresented: $showCompare) { CompareSheet(document: document) }
         .sheet(isPresented: $showExport) { ExportSheet(document: document, windowTitle: window?.title ?? "Mix") }
         .sheet(item: $infoTrack) { t in
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: Space.xl) {
                 TrackDetail(document: document, trackID: t.id)
                 HStack { Spacer(); Button("Done") { infoTrack = nil }.keyboardShortcut(.defaultAction) }
             }
-            .padding(20).frame(width: 900)
+            .padding(Space.xxl).frame(width: 900)
         }
         .alert(alert ?? "", isPresented: Binding(get: { alert != nil }, set: { if !$0 { alert = nil } })) {
             Button("OK", role: .cancel) {}

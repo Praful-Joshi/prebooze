@@ -11,7 +11,7 @@ struct TransportBar: View {
     @State private var clockHover = false
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: Space.xxs) {
             Button { editor.jump(by: -1) } label: { Image(systemName: "backward.end.fill") }
                 .help("Previous transition")
                 .keyboardShortcut(.leftArrow, modifiers: .command)
@@ -26,7 +26,7 @@ struct TransportBar: View {
             Button { editor.jump(by: 1) } label: { Image(systemName: "forward.end.fill") }
                 .help("Next transition")
                 .keyboardShortcut(.rightArrow, modifiers: .command)
-            clock.padding(.horizontal, 8)
+            clock.padding(.horizontal, Space.m)
             if player.loading { ProgressView().controlSize(.mini).transition(.opacity) }
             Toggle(isOn: Binding(get: { editor.loop }, set: { editor.setLoop($0) })) {
                 Image(systemName: "repeat")
@@ -56,7 +56,7 @@ struct TransportBar: View {
             .menuStyle(.borderlessButton).fixedSize()
             .help("Bars of each track shown and looped either side of a transition")
         }
-        .animation(.smooth(duration: 0.2), value: player.loading)
+        .animation(Motion.fade, value: player.loading)
     }
 
     private var clock: some View {
@@ -75,7 +75,7 @@ struct TransportBar: View {
             .onAppear { player.tick(); editor.tick() }
             .onChange(of: pos) { player.tick(); editor.tick() }
         }
-        .onHover { h in withAnimation(.easeOut(duration: 0.15)) { clockHover = h } }
+        .onHover { h in withAnimation(Motion.hover) { clockHover = h } }
         .help("Hover for time remaining")
     }
 
@@ -94,23 +94,23 @@ struct AnalysisProgressLine: View {
         ZStack(alignment: .topLeading) {
             if analysis.running {
                 GeometryReader { g in
-                    Capsule().fill(Color.accentColor)
+                    Capsule().fill(Ink.accent)
                         .frame(width: max(8, g.size.width * analysis.progress), height: 2)
-                        .animation(.smooth, value: analysis.progress)
+                        .animation(Motion.fade, value: analysis.progress)
                 }
                 .frame(height: 2)
                 .help("Analysing \(analysis.done)/\(analysis.total): \(analysis.current)")
                 .transition(.opacity)
             } else if !analysis.failures.isEmpty {
                 Label("\(analysis.failures.count) couldn't be read", systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundStyle(.orange).padding(4)
+                    .font(.caption).foregroundStyle(Ink.warning).padding(Space.xs)
                     .background(.regularMaterial, in: Capsule())
                     .help(analysis.failures.joined(separator: "\n"))
-                    .padding(6)
+                    .padding(Space.s)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
-        .animation(.easeOut(duration: 0.3), value: analysis.running)
+        .animation(Motion.fade, value: analysis.running)
     }
 }
 
@@ -121,21 +121,21 @@ struct StemExportStatus: View {
     var body: some View {
         Group {
             if let e = stems.exporting {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.s) {
                     ProgressView(value: Double(e.done), total: Double(max(e.total, 1))).frame(width: 70)
                     Text("STEM \(e.done + 1)/\(e.total): \(e.current)").lineLimit(1)
                 }
                 .help("Writing .stem.mp4 files for Mixxx (separating songs first where needed)")
             } else if !stems.exportErrors.isEmpty {
                 Label("\(stems.exportErrors.count) STEM file(s) failed", systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Ink.warning)
                     .help(stems.exportErrors.joined(separator: "\n"))
             }
         }
         .font(.caption)
-        .padding(.horizontal, 8).padding(.vertical, 4)
+        .padding(.horizontal, Space.m).padding(.vertical, Space.xs)
         .background { if stems.exporting != nil || !stems.exportErrors.isEmpty { Capsule().fill(.regularMaterial) } }
-        .padding(8)
-        .animation(.smooth, value: stems.exporting?.done)
+        .padding(Space.m)
+        .animation(Motion.fade, value: stems.exporting?.done)
     }
 }
