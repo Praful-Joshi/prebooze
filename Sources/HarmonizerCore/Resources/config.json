@@ -1,0 +1,115 @@
+{
+  "transitions": [
+    {
+      "label": "Perfect Match",
+      "colour": "green",
+      "letter": "same",
+      "from": "any",
+      "delta": 0
+    },
+    {
+      "label": "Perfect Drop",
+      "colour": "green",
+      "letter": "same",
+      "from": "any",
+      "delta": -1
+    },
+    {
+      "label": "Perfect Boost",
+      "colour": "green",
+      "letter": "same",
+      "from": "any",
+      "delta": 1
+    },
+    {
+      "label": "Energy Boost",
+      "colour": "yellow",
+      "letter": "same",
+      "from": "any",
+      "delta": 2
+    },
+    {
+      "label": "Scale Change",
+      "colour": "yellow",
+      "letter": "other",
+      "from": "any",
+      "delta": 0
+    },
+    {
+      "label": "Diagonal Mix",
+      "colour": "yellow",
+      "letter": "other",
+      "from": "B",
+      "delta": 1
+    },
+    {
+      "label": "Diagonal Mix",
+      "colour": "yellow",
+      "letter": "other",
+      "from": "A",
+      "delta": -1
+    },
+    {
+      "label": "Jaws Mix",
+      "colour": "blue",
+      "letter": "same",
+      "from": "any",
+      "delta": 7
+    },
+    {
+      "label": "Mood Change",
+      "colour": "blue",
+      "letter": "other",
+      "from": "B",
+      "delta": -3
+    },
+    {
+      "label": "Mood Change",
+      "colour": "blue",
+      "letter": "other",
+      "from": "A",
+      "delta": 3
+    }
+  ],
+  "incompatible": {
+    "label": "Incompatible",
+    "colour": "red"
+  },
+  "costs": {
+    "fuzzy": {
+      "Perfect Match": 0,
+      "Perfect Drop": 1,
+      "Perfect Boost": 1,
+      "Scale Change": 2,
+      "Diagonal Mix": 3,
+      "Energy Boost": 6,
+      "Mood Change": 12,
+      "Jaws Mix": 12,
+      "Incompatible": 30
+    },
+    "mood": {
+      "Perfect Match": 1,
+      "Perfect Drop": 0.5,
+      "Perfect Boost": 0,
+      "Scale Change": 1.5,
+      "Diagonal Mix": 3,
+      "Energy Boost": 1,
+      "Mood Change": 2,
+      "Jaws Mix": 4,
+      "Incompatible": 30
+    }
+  },
+  "bpm": {
+    "cost_per_bpm": 3.0,
+    "direction_cost_per_bpm": 3.0
+  },
+  "defaults": {
+    "key_bpm_slider": 50,
+    "bpm_tolerance": 4.0,
+    "tempo_direction": "any",
+    "half_double": false,
+    "time_budget_s": 10,
+    "seed": 42,
+    "exact_max_tracks": 15
+  }
+}

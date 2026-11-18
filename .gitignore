@@ -1,0 +1,10 @@
+.build/
+build/
+.swiftpm/
+*.xcodeproj/xcuserdata/
+.vscode/
+
+# Large vendored binaries: kept on disk, fetched and checksum-verified by CI (#4), never committed.
+# GitHub rejects files over 100 MB, and binaries bloat history forever.
+Models/htdemucs.onnx.data
+Vendor/onnxruntime/lib/*.dylib
