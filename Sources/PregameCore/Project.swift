@@ -4,6 +4,9 @@ import Foundation
 public struct ProjectTrack: Codable, Identifiable, Hashable, Sendable {
     public var id = UUID()
     public var path: String
+    /// Security-scoped bookmark to the file, so it's found again after a
+    /// relaunch or a move, and inside the sandbox. Mixes from before have none.
+    public var bookmark: Data?
     public var contentHash: String?
     public var title: String
     public var artist: String
@@ -131,6 +134,7 @@ extension ProjectTrack {
         t.duration = tags?.duration
         t.tagKey = parseKey(tags?.keyText)
         t.tagBpm = tags?.bpm
+        t.bookmark = makeBookmark(url)
         return t
     }
 

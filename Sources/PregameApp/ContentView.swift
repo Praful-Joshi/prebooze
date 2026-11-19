@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var alert: String?
     @State private var window: NSWindow?
     @State private var followingSelection = false
+    @State private var showRelocate = false
 
     var body: some View {
         commands(sheets(split))
@@ -64,6 +65,13 @@ struct ContentView: View {
         .sheet(isPresented: $showHarmonize) { HarmonizeSheet(document: document) }
         .sheet(isPresented: $showCompare) { CompareSheet(document: document) }
         .sheet(isPresented: $showExport) { ExportSheet(document: document, windowTitle: window?.title ?? "Mix") }
+        .sheet(isPresented: $showRelocate) {
+            RelocateSheet(document: document) {
+                analysis.retryFailed(in: document)
+                stems.retry(document.project.tracks)
+                requestStems()
+            }
+        }
         .sheet(item: $infoTrack) { t in
             VStack(alignment: .leading, spacing: Space.xl) {
                 TrackDetail(document: document, trackID: t.id)
@@ -84,8 +92,11 @@ struct ContentView: View {
             editor.attach(document, player: player)
             debugAutoplay()
             requestStems()
+            // A Mix whose Tracks can't be reached asks where their folders are now.
+            showRelocate = !document.project.missingFolders().isEmpty
         }
         .onDisappear { player.pause(); player.engine.stop() }
+        .onChange(of: window) { if let window { document.markLocatedChanges(in: window) } }
         .onChange(of: document.project.tracks.count) { analysis.analyseMissing(in: document) }
         .onChange(of: document.project) { player.refresh(); editor.refresh(); requestStems() }
         .onChange(of: editor.index) { requestStems() }
@@ -117,6 +128,10 @@ struct ContentView: View {
         .onReceive(notifications(.harmonize)) { _ in showHarmonize = true }
         .onReceive(notifications(.compare)) { _ in showCompare = true }
         .onReceive(notifications(.writeTags)) { _ in writeOverridesToTags() }
+        .onReceive(notifications(.locateMissing)) { _ in
+            if document.project.missingFolders().isEmpty { alert = "Every track in this mix was found." }
+            else { showRelocate = true }
+        }
         .onReceive(notifications(.exportMix)) { _ in showExport = true }
         .onReceive(notifications(.getInfo)) { _ in
             if let id = selection.first { infoTrack = document.project.tracks.first { $0.id == id } }
