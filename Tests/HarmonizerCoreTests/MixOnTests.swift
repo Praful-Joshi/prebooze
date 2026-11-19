@@ -135,7 +135,7 @@ final class VariantTests: XCTestCase {
     }
 
     func testMixInfoAppliesEditsAndLoops() throws {
-        let cache = AnalysisCache(directory: TestAudio.tempDir())
+        let cache = AnalysisCache(directory: TestFiles.tempDir())
         let g = TrackGrid(frames: Int(100 * 2 * sr), sampleRate: sr, firstBeat: 500, bpm: 120)
         let s = TrackStructure(sections: [Section(0, .intro), Section(16, .drop), Section(84, .outro)],
                                bars: g.bars, confidence: 0.9, phraseOffset: 0, firstBeat: 500, bpm: 120, sampleRate: sr)

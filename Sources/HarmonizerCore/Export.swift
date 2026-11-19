@@ -61,30 +61,38 @@ public enum ExportError: Error, LocalizedError {
     }
 }
 
-/// Streams 24-bit WAV and/or 320 kbps MP3 as chunks arrive.
+/// Streams 24-bit WAV, 24-bit FLAC and/or 320 kbps MP3 as chunks arrive.
 final class MixWriter {
     private var wav: AVAudioFile?
-    private let wavBuffer: AVAudioPCMBuffer
+    private var flac: AVAudioFile?
+    private let pcmBuffer: AVAudioPCMBuffer
     private var lame: OpaquePointer?
     private var mp3: FileHandle?
     private var mp3Buffer: [UInt8]
     private let chunk: Int
 
-    init(wavURL: URL?, mp3URL: URL?, chunk: Int) throws {
+    init(wavURL: URL? = nil, flacURL: URL? = nil, mp3URL: URL? = nil, sampleRate: Double = mixSampleRate,
+         chunk: Int) throws {
         self.chunk = chunk
-        let format = AVAudioFormat(standardFormatWithSampleRate: mixSampleRate, channels: 2)!
-        wavBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(chunk))!
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 2)!
+        pcmBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(chunk))!
         mp3Buffer = [UInt8](repeating: 0, count: Int(1.25 * Double(chunk)) + 7200)
         if let wavURL {
-            let settings: [String: Any] = [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: mixSampleRate,
+            let settings: [String: Any] = [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: sampleRate,
                                            AVNumberOfChannelsKey: 2, AVLinearPCMBitDepthKey: 24,
                                            AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false]
             wav = try AVAudioFile(forWriting: wavURL, settings: settings, commonFormat: .pcmFormatFloat32,
                                   interleaved: false)
         }
+        if let flacURL {
+            let settings: [String: Any] = [AVFormatIDKey: kAudioFormatFLAC, AVSampleRateKey: sampleRate,
+                                           AVNumberOfChannelsKey: 2, AVEncoderBitDepthHintKey: 24]
+            flac = try AVAudioFile(forWriting: flacURL, settings: settings, commonFormat: .pcmFormatFloat32,
+                                   interleaved: false)
+        }
         if let mp3URL {
             guard let gf = lame_init() else { throw ExportError.encoder("LAME init") }
-            lame_set_in_samplerate(gf, Int32(mixSampleRate))
+            lame_set_in_samplerate(gf, Int32(sampleRate))
             lame_set_num_channels(gf, 2)
             lame_set_brate(gf, 320)
             lame_set_quality(gf, 2)
@@ -96,11 +104,12 @@ final class MixWriter {
     }
 
     func write(_ l: UnsafePointer<Float>, _ r: UnsafePointer<Float>, _ n: Int) throws {
-        if let wav {
-            wavBuffer.frameLength = AVAudioFrameCount(n)
-            wavBuffer.floatChannelData![0].update(from: l, count: n)
-            wavBuffer.floatChannelData![1].update(from: r, count: n)
-            try wav.write(from: wavBuffer)
+        if wav != nil || flac != nil {
+            pcmBuffer.frameLength = AVAudioFrameCount(n)
+            pcmBuffer.floatChannelData![0].update(from: l, count: n)
+            pcmBuffer.floatChannelData![1].update(from: r, count: n)
+            try wav?.write(from: pcmBuffer)
+            try flac?.write(from: pcmBuffer)
         }
         if let lame, let mp3 {
             let bytes = mp3Buffer.withUnsafeMutableBufferPointer {
@@ -121,7 +130,8 @@ final class MixWriter {
             lame_close(lame)
             self.lame = nil
         }
-        wav = nil   // closes the file
+        wav = nil   // releasing the files closes them
+        flac = nil
     }
 }
 

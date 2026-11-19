@@ -32,10 +32,11 @@ public func readTags(_ url: URL) -> FileTags? {
                     duration: info.duration > 0 ? info.duration : nil)
 }
 
-/// Write key (traditional notation, e.g. "Am") and/or BPM into the file.
+/// Write key (traditional notation, e.g. "Am"), BPM, title and/or artist into
+/// the file. Nil leaves that field as it is.
 @discardableResult
-public func writeTags(_ url: URL, key: CamelotKey?, bpm: Double?) -> Bool {
-    ctag_write(url.path, key?.name, bpm ?? 0) != 0
+public func writeTags(_ url: URL, key: CamelotKey?, bpm: Double?, title: String? = nil, artist: String? = nil) -> Bool {
+    ctag_write(url.path, title, artist, key?.name, bpm ?? 0) != 0
 }
 
 /// Audio files in a folder (optionally recursive), sorted by path.

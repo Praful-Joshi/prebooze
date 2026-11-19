@@ -59,15 +59,21 @@ extern "C" ctag_info ctag_read(const char *path) {
     return info;
 }
 
-extern "C" int ctag_write(const char *path, const char *key, double bpm) {
+extern "C" int ctag_write(const char *path, const char *title, const char *artist, const char *key,
+                          double bpm) {
     TagLib::FileRef ref(path, false);
     if (ref.isNull()) {
         return 0;
     }
     TagLib::PropertyMap props = ref.file()->properties();
-    if (key && *key) {
-        props.replace("INITIALKEY", TagLib::StringList(TagLib::String(key, TagLib::String::UTF8)));
-    }
+    auto replace = [&props](const char *name, const char *value) {
+        if (value && *value) {
+            props.replace(name, TagLib::StringList(TagLib::String(value, TagLib::String::UTF8)));
+        }
+    };
+    replace("TITLE", title);
+    replace("ARTIST", artist);
+    replace("INITIALKEY", key);
     if (bpm > 0) {
         char buf[32];
         std::snprintf(buf, sizeof(buf), "%.2f", bpm);

@@ -87,7 +87,7 @@ final class StemMixTests: XCTestCase {
 
     /// AAC stems written by the cache read back aligned with the source.
     func testStemCacheRoundTripStaysAligned() throws {
-        let cache = StemCache(directory: TestAudio.tempDir())
+        let cache = StemCache(directory: TestFiles.tempDir())
         let n = Int(10 * StemSeparator.sampleRate)
         let clicks = Clicks.track(bpm: 120, beats: 18, sr: StemSeparator.sampleRate, offset: 2205)
         let x = Array(clicks.prefix(n)) + [Float](repeating: 0, count: max(0, n - clicks.count))
@@ -106,7 +106,7 @@ final class StemMixTests: XCTestCase {
 
 final class PresetTests: XCTestCase {
     func testSaveApplyDelete() {
-        let store = PresetStore(url: TestAudio.tempDir().appendingPathComponent("p.json"))
+        let store = PresetStore(url: TestFiles.tempDir().appendingPathComponent("p.json"))
         var mine = TransitionConfig.shared.spec(preset: "Stem Swap")
         XCTAssertNotNil(mine.lane(.bassline), "built-in stem preset loads its stem lanes")
         mine.bars = 32
@@ -209,7 +209,7 @@ final class StemFileTests: XCTestCase {
         }
         let stems = [tone(100), tone(200), tone(800), tone(400)]
         let mix = [0, 1].map { c in (0..<n).map { i in stems.reduce(Float(0)) { $0 + $1[c][i] } } }
-        let url = TestAudio.tempDir().appendingPathComponent("Test Song.stem.mp4")
+        let url = TestFiles.tempDir().appendingPathComponent("Test Song.stem.mp4")
         try StemFile.write(url, mix: mix, stems: stems, sampleRate: sr, tags: .init(title: "Test Song", artist: "Me"))
 
         // Five stereo AAC tracks; only the mix is enabled.
@@ -229,18 +229,29 @@ final class StemFileTests: XCTestCase {
         XCTAssertEqual(mixxxManifest(d), d[stem.body])
         XCTAssertFalse(try StemFile.repair(url))
         // Each track decodes to its own content (stem 4 = vocals = 400 Hz).
-        if let ffmpeg = TestAudio.ffmpeg {
-            let out = url.deletingLastPathComponent().appendingPathComponent("v.wav")
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: ffmpeg)
-            p.arguments = ["-loglevel", "error", "-y", "-i", url.path, "-map", "0:a:4", out.path]
-            try p.run(); p.waitUntilExit()
-            XCTAssertEqual(p.terminationStatus, 0)
-            let v = try decodeAudio(out)
-            var crossings = 0
-            for i in 22050..<66150 where (v.left[i - 1] < 0) != (v.left[i] < 0) { crossings += 1 }
-            XCTAssertEqual(Double(crossings) / 2, 400, accuracy: 5)
+        let v = try decodeTrack(tracks[4], of: asset)
+        var crossings = 0
+        for i in 22050..<66150 where (v[i - 1] < 0) != (v[i] < 0) { crossings += 1 }
+        XCTAssertEqual(Double(crossings) / 2, 400, accuracy: 5)
+    }
+
+    /// One audio track of a multi-track file, as mono float samples.
+    private func decodeTrack(_ track: AVAssetTrack, of asset: AVAsset) throws -> [Float] {
+        let reader = try AVAssetReader(asset: asset)
+        let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
+            AVFormatIDKey: kAudioFormatLinearPCM, AVLinearPCMBitDepthKey: 32, AVLinearPCMIsFloatKey: true,
+            AVLinearPCMIsNonInterleaved: false, AVLinearPCMIsBigEndianKey: false, AVNumberOfChannelsKey: 1,
+        ])
+        reader.add(output)
+        XCTAssertTrue(reader.startReading())
+        var samples: [Float] = []
+        while let buffer = output.copyNextSampleBuffer(), let block = CMSampleBufferGetDataBuffer(buffer) {
+            var chunk = [Float](repeating: 0, count: CMBlockBufferGetDataLength(block) / 4)
+            chunk.withUnsafeMutableBytes { _ = CMBlockBufferCopyDataBytes(block, atOffset: 0, dataLength: $0.count, destination: $0.baseAddress!) }
+            samples += chunk
         }
+        XCTAssertEqual(reader.status, .completed)
+        return samples
     }
 
     /// Mixxx's seekTillAtom: read size + type, descend on a match, else skip;
@@ -269,7 +280,7 @@ final class StemExportChainTests: XCTestCase {
         func tone(_ f: Double) -> [Float] { (0..<n).map { Float(sin(2 * .pi * f * Double($0) / sr) * 0.15) } }
         let d = tone(100), b = tone(200), m = tone(800), v = tone(400)
         let full = (0..<n).map { d[$0] + b[$0] + m[$0] + v[$0] }
-        let dir = TestAudio.tempDir()
+        let dir = TestFiles.tempDir()
         let song = dir.appendingPathComponent("song.wav")
         try StemCache.writeWAV(song, left: full, right: full, sampleRate: sr)
         let cache = StemCache(directory: dir.appendingPathComponent("stems"))
