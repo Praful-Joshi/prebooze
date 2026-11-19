@@ -16,7 +16,7 @@ REPOSITORY="https://github.com/Praful-Joshi/pregame"
 
 if [[ $# -lt 1 || $# -gt 2 || "$1" != *.dmg || ! -f "$1" ]]; then
   echo "usage: scripts/make-appcast.sh <Pregame-x.y.dmg> [out-dir]" >&2
-  exit 64
+  exit 2
 fi
 DMG="${1:A}"
 OUT="${${2:-$ROOT/build/appcast}:A}"

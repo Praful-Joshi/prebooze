@@ -29,12 +29,12 @@ final class Updates: ObservableObject {
     func checkForUpdates() { controller.checkForUpdates(nil) }
 
     var checksAutomatically: Bool {
-        get { updater.automaticallyChecksForUpdates }
+        get { isAvailable && updater.automaticallyChecksForUpdates }
         set { objectWillChange.send(); updater.automaticallyChecksForUpdates = newValue }
     }
 
     var installsAutomatically: Bool {
-        get { updater.automaticallyDownloadsUpdates }
+        get { isAvailable && updater.automaticallyDownloadsUpdates }
         set { objectWillChange.send(); updater.automaticallyDownloadsUpdates = newValue }
     }
 }
@@ -60,7 +60,8 @@ struct UpdateSettings: View {
                 Toggle("Download and install updates automatically", isOn: $updates.installsAutomatically)
                     .disabled(!updates.checksAutomatically)
             } footer: {
-                Text("Pregame checks GitHub about once a day. Updates are signed, and installing one keeps your Mixes, settings and folder access.")
+                Text((updates.checksAutomatically ? "Pregame checks GitHub about once a day. " : "")
+                     + "Updates are signed, and installing one keeps your Mixes, settings and folder access.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {

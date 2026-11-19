@@ -44,7 +44,8 @@ install_name_tool -change "$TAGLIB" "@rpath/libtag.2.dylib" "$APP/Contents/MacOS
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/Pregame"
 
 # Sparkle (updates, docs/updates.md), straight from the pinned package's
-# xcframework, whatever folder the build put its copy in. ditto keeps the
+# xcframework: the build's own copy lands in a different folder depending on
+# the build system. ditto keeps the
 # framework's symlinks. Drop the rpath into the build folder, so even on this
 # Mac the app loads the embedded copy and its XPC services.
 SPARKLE=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"

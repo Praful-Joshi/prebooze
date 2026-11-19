@@ -68,6 +68,8 @@ The release workflow (#11) will do this on a version tag. To do it locally:
 
 Don't edit the appcast after it's generated: the edit breaks its signature, and the app then rejects it.
 
+Each appcast lists only its own release, and the app asks GitHub for the release marked **latest**. So the release marked latest must always be the newest stable version, with its `appcast.xml` attached. A latest release without one stops updates for everyone. Pre-releases are never marked latest; betas will get their own appcast ([#26](https://github.com/Praful-Joshi/pregame/issues/26)).
+
 ## Testing an update end to end
 
 To test without touching the real app's container, use a copy with a throwaway bundle ID (as in the sandbox tests):
