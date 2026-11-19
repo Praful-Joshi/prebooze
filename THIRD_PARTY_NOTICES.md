@@ -1,8 +1,8 @@
 # Third-party notices
 
-Prebooze is free software under the GNU General Public License, version 3 (see [LICENSE](LICENSE)). It includes or links the components below, each under its own licence. GPL-3.0 is compatible with all of them, and Prebooze as a whole is distributed under GPL-3.0.
+Pregame is free software under the GNU General Public License, version 3 (see [LICENSE](LICENSE)). It includes or links the components below, each under its own licence. GPL-3.0 is compatible with all of them, and Pregame as a whole is distributed under GPL-3.0.
 
-| Component | Use in Prebooze | Licence | How it is included |
+| Component | Use in Pregame | Licence | How it is included |
 |---|---|---|---|
 | [Rubber Band Library](https://breakfastquay.com/rubberband/) | Time-stretching and pitch-shifting | GPL-2.0-or-later | Linked statically |
 | [Queen Mary DSP library](https://github.com/c4dm/qm-dsp) (as vendored in Mixxx 2.5) | Key and tempo detection | GPL-2.0-or-later | Source in `Sources/QMDSP` |
@@ -13,7 +13,7 @@ Prebooze is free software under the GNU General Public License, version 3 (see [
 | [mpg123](https://www.mpg123.de) | MP3 decoding for LAME | LGPL-2.1 | Linked statically |
 | [libsamplerate](https://libsndfile.github.io/libsamplerate/) | Sample-rate conversion for Rubber Band | BSD-2-Clause | Linked statically |
 | [KISS FFT](https://github.com/mborgerding/kissfft) | FFT inside QM DSP | BSD-3-Clause | Source in `Sources/QMDSP/ext/kissfft` |
-| [Mixxx](https://mixxx.org) | Analysis settings and BPM post-processing ported from Mixxx 2.5 | GPL-2.0-or-later | Ported code in `Sources/HarmonizerCore` |
+| [Mixxx](https://mixxx.org) | Analysis settings and BPM post-processing ported from Mixxx 2.5 | GPL-2.0-or-later | Ported code in `Sources/PregameCore` |
 
 ## Licence texts and copyright
 

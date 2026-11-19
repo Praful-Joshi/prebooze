@@ -1,14 +1,14 @@
-# Prebooze
+# Pregame
 
 **Party-ready Mixes from your own music, on your own Mac. Free and open source.**
 
-Prebooze is for the **Mix Host**: someone throwing a house party who wants the music to flow — no dead air, no jarring jumps — without learning to DJ. Add a folder of music you own, press **Harmonize**, and Prebooze orders the Tracks for key and tempo, then joins each to the next with a beat-matched Transition. Listen, tweak any Transition by ear, and export the whole Mix as one file to play from a phone, a USB stick or a speaker.
+Pregame is for the **Mix Host**: someone throwing a house party who wants the music to flow — no dead air, no jarring jumps — without learning to DJ. Add a folder of music you own, press **Harmonize**, and Pregame orders the Tracks for key and tempo, then joins each to the next with a beat-matched Transition. Listen, tweak any Transition by ear, and export the whole Mix as one file to play from a phone, a USB stick or a speaker.
 
 - **Local and private:** no account, no backend, no streaming service. Your music never leaves your Mac.
 - **Free:** GPL-3.0, with no paid export or subscription.
 - **Native:** a SwiftUI app for macOS.
 
-> **Status:** early. The engine (analysis, Harmonize, the Transition editor, stems and export) is working; v1 work is tracked in [issue #2](https://github.com/Praful-Joshi/prebooze/issues/2). The code, build products and data folders are still named Harmonizer (`Sources/HarmonizerCore`, `Harmonizer.app`, `HARMONIZER_*` variables) until the rename, and those names are kept exactly as they are below.
+> **Status:** early. The engine (analysis, Harmonize, the Transition editor, stems and export) is working; v1 work is tracked in [issue #2](https://github.com/Praful-Joshi/pregame/issues/2). Pregame used to be called Harmonizer, and its data folders keep that name for now (`~/Library/Application Support/Harmonizer`, `~/Library/Caches/Harmonizer`).
 
 ## System requirements
 
@@ -25,7 +25,7 @@ brew install taglib rubberband libsamplerate lame mpg123
 scripts/fetch-vendor.sh          # downloads ONNX Runtime and verifies its checksum
 swift build                      # debug build
 swift test                       # the test suite: a few minutes, no external tools needed
-scripts/build-app.sh --install   # release build of Harmonizer.app into /Applications
+scripts/build-app.sh --install   # release build of Pregame.app into /Applications
 ```
 
 `build-app.sh` also bundles the Demucs stem model (`Models/htdemucs.onnx.data`, 161 MB), which isn't in the repo. Export it as described in [`scripts/stems/README.md`](scripts/stems/README.md); everything except stem separation works without it.
@@ -34,7 +34,7 @@ Every push and pull request is built and tested by [GitHub Actions](.github/work
 
 ## Licence
 
-Prebooze is free software under the [GNU General Public License v3.0](LICENSE). It builds on Rubber Band (GPL), Queen Mary DSP (GPL), TagLib (LGPL), ONNX Runtime (MIT), Demucs (MIT) and others; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Pregame is free software under the [GNU General Public License v3.0](LICENSE). It builds on Rubber Band (GPL), Queen Mary DSP (GPL), TagLib (LGPL), ONNX Runtime (MIT), Demucs (MIT) and others; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 # How it works
 
@@ -189,7 +189,7 @@ When a track's structure confidence is under 0.5, the structure modes fall back 
 
 **Open the app**
 
-1. Open **Prebooze** from Applications (installed as `Harmonizer.app` for now). Each mix is a `.hmix` project with autosave and full undo.
+1. Open **Pregame** from Applications. If you had installed it under its old name, delete `Harmonizer.app` so Mix files open in Pregame; your settings, analysis and stems carry over. Each mix is a `.hmix` project with autosave and full undo.
 
 **Add tracks**
 
@@ -237,39 +237,39 @@ scripts/build-app.sh --install  # release .app → /Applications
 - Homebrew `taglib` (bundled into the .app), `rubberband`, `libsamplerate`, `lame`, `mpg123` (linked statically)
 - ONNX Runtime 1.31.0 in `Vendor/onnxruntime/lib`, fetched and checksum-verified by `scripts/fetch-vendor.sh`
 
-The deployment target is macOS 15, the oldest macOS that GitHub Actions still offers. CI builds and tests on macOS 15 and macOS 26, so every supported version is tested. Anything newer than 15 must sit behind `#available` with a fallback. Homebrew builds its libraries for the macOS it runs on, so a local build only runs on that version of macOS or later. Release builds need those libraries built for macOS 15 ([#11](https://github.com/Praful-Joshi/prebooze/issues/11)).
+The deployment target is macOS 15, the oldest macOS that GitHub Actions still offers. CI builds and tests on macOS 15 and macOS 26, so every supported version is tested. Anything newer than 15 must sit behind `#available` with a fallback. Homebrew builds its libraries for the macOS it runs on, so a local build only runs on that version of macOS or later. Release builds need those libraries built for macOS 15 ([#11](https://github.com/Praful-Joshi/pregame/issues/11)).
 
 **Tests** drive public behaviour (mostly through `MixProject`, plus the playback engine) and assert on what a Mix Host would notice: which Tracks play and in what order, Transition labels, lengths, and the audio frames produced. They are deterministic (seeded, with a fixed amount of solver work) and run offline. The test audio is generated in Swift, so no real music is committed.
 
 **Real-music suites** stay out of the default run because they need your own music files. `scripts/test-real-music.sh <folder> [output folder]` runs them in a release build:
 
-- analysis parity with the keys and BPMs Mixxx stored (`AnalysisParityTests`, the files listed in `Tests/HarmonizerCoreTests/Fixtures/mixxx_analysis.json`)
+- analysis parity with the keys and BPMs Mixxx stored (`AnalysisParityTests`, the files listed in `Tests/PregameCoreTests/Fixtures/mixxx_analysis.json`)
 - a full export of the folder with a click check at every join (`RealExportTests`)
 - detected song structure, printed for eyeballing (`RealStructureTests`)
-- optional, when their variables are set: stems against the reference (`HARMONIZER_STEM_REF`), real stems in a Transition (`HARMONIZER_STEM_PAIR`), separation and key-shift timing (`HARMONIZER_STEM_FILE`, `HARMONIZER_SHIFT_FILE`)
+- optional, when their variables are set: stems against the reference (`PREGAME_STEM_REF`), real stems in a Transition (`PREGAME_STEM_PAIR`), separation and key-shift timing (`PREGAME_STEM_FILE`, `PREGAME_SHIFT_FILE`)
 
 **Layout:**
 
 | Path | What |
 |---|---|
-| `Sources/HarmonizerCore` | Engine: keys, cost model, solver, analysis, cache, project, exports |
-| `Sources/HarmonizerCore/Resources/config.json` | Transition labels, Fuzzy/Mood costs, BPM model, defaults: **tune here** |
-| `Sources/HarmonizerCore/Resources/transitions.json` | Transition presets, automatic rules, defaults: **tune here** |
-| `Sources/HarmonizerCore/MixEngine.swift` | Mix layout, real-time/offline renderer |
-| `Sources/HarmonizerCore/Structure.swift` | Downbeat, phrases, sections, structure edits |
-| `Sources/HarmonizerCore/TrackTiming.swift` | Per-track edits, loops/key-shift audio variants, mix info |
-| `Sources/HarmonizerCore/MixPlan.swift` | Mix-on modes and transition placement |
-| `Sources/HarmonizerCore/KeyShift.swift` | Fix-key suggestion |
-| `Sources/HarmonizerCore/Stems.swift`, `StemCache.swift` | Demucs separation (STFT, segments, ONNX), AAC stem cache |
+| `Sources/PregameCore` | Engine: keys, cost model, solver, analysis, cache, project, exports |
+| `Sources/PregameCore/Resources/config.json` | Transition labels, Fuzzy/Mood costs, BPM model, defaults: **tune here** |
+| `Sources/PregameCore/Resources/transitions.json` | Transition presets, automatic rules, defaults: **tune here** |
+| `Sources/PregameCore/MixEngine.swift` | Mix layout, real-time/offline renderer |
+| `Sources/PregameCore/Structure.swift` | Downbeat, phrases, sections, structure edits |
+| `Sources/PregameCore/TrackTiming.swift` | Per-track edits, loops/key-shift audio variants, mix info |
+| `Sources/PregameCore/MixPlan.swift` | Mix-on modes and transition placement |
+| `Sources/PregameCore/KeyShift.swift` | Fix-key suggestion |
+| `Sources/PregameCore/Stems.swift`, `StemCache.swift` | Demucs separation (STFT, segments, ONNX), AAC stem cache |
 | `Sources/COnnx`, `Vendor/onnxruntime`, `Models/` | ONNX Runtime 1.31 (MIT) C shim + headers (the library comes from `scripts/fetch-vendor.sh`), exported Demucs model (MIT) |
 | `scripts/stems/` | How the model was exported, reference implementation, benchmarks |
-| `Sources/HarmonizerCore/Transitions.swift` | Curves, specs, presets, tempo glide |
-| `Sources/HarmonizerCore/Export.swift` | WAV/MP3 export (the writer also does FLAC), tracklist, cue sheet |
+| `Sources/PregameCore/Transitions.swift` | Curves, specs, presets, tempo glide |
+| `Sources/PregameCore/Export.swift` | WAV/MP3 export (the writer also does FLAC), tracklist, cue sheet |
 | `Sources/CRubberBand`, `Sources/CLame` | Rubber Band (GPL) and LAME (LGPL), linked statically |
-| `Sources/HarmonizerApp` | SwiftUI app |
+| `Sources/PregameApp` | SwiftUI app |
 | `Sources/QMDSP` | Queen Mary DSP from Mixxx 2.5 (GPL) + C shim |
 | `Sources/CTagLib` | TagLib bridge |
-| `Tests/HarmonizerCoreTests/Fixtures` | Keys and BPMs Mixxx stored for the real-music parity suite |
-| `Tests/HarmonizerCoreTests/Support/SyntheticAudio.swift` | Test audio generator: click tracks, chords in a key, energy ramps, section changes, silence; writes WAV/MP3/FLAC (plus M4A, AIFF) with tags |
+| `Tests/PregameCoreTests/Fixtures` | Keys and BPMs Mixxx stored for the real-music parity suite |
+| `Tests/PregameCoreTests/Support/SyntheticAudio.swift` | Test audio generator: click tracks, chords in a key, energy ramps, section changes, silence; writes WAV/MP3/FLAC (plus M4A, AIFF) with tags |
 
 **Licences:** the app is GPL-3.0 ([LICENSE](LICENSE)). QM DSP and Rubber Band are GPL-2.0+, TagLib, LAME and mpg123 are LGPL, ONNX Runtime and Demucs are MIT; [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists them all.

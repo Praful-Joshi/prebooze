@@ -1,4 +1,4 @@
-// Minimal C interface to TagLib: the fields Harmonizer reads and writes.
+// Minimal C interface to TagLib: the fields Pregame reads and writes.
 #ifndef CTAGLIB_H
 #define CTAGLIB_H
 

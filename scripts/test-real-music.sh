@@ -9,10 +9,10 @@
 #   RealExportTests      exports <music folder> as one Mix and checks every join for clicks
 #   RealStructureTests   prints detected song structure for <music folder>
 # Also runs, when you set their variables:
-#   HARMONIZER_STEM_REF=<dir>          StemTests.testMatchesReference (ref_in.npy, ref_out.npy)
-#   HARMONIZER_STEM_PAIR="/a.mp3|/b.mp3"  RealStemMixTests (stems already cached)
-#   HARMONIZER_STEM_FILE=<audio>       StemTiming
-#   HARMONIZER_SHIFT_FILE=<audio>      RealKeyShiftTiming
+#   PREGAME_STEM_REF=<dir>          StemTests.testMatchesReference (ref_in.npy, ref_out.npy)
+#   PREGAME_STEM_PAIR="/a.mp3|/b.mp3"  RealStemMixTests (stems already cached)
+#   PREGAME_STEM_FILE=<audio>       StemTiming
+#   PREGAME_SHIFT_FILE=<audio>      RealKeyShiftTiming
 set -euo pipefail
 cd "${0:A:h:h}"
 
@@ -26,9 +26,9 @@ mkdir -p "$out"
 echo "Music: $music"
 echo "Export output: $out"
 
-HARMONIZER_PARITY=1 \
-HARMONIZER_EXPORT="$music" \
-HARMONIZER_EXPORT_OUT="${out:A}" \
-HARMONIZER_STRUCTURE="$music" \
+PREGAME_PARITY=1 \
+PREGAME_EXPORT="$music" \
+PREGAME_EXPORT_OUT="${out:A}" \
+PREGAME_STRUCTURE="$music" \
   swift test -c release \
     --filter 'AnalysisParityTests|RealExportTests|RealStructureTests|RealStemMixTests|RealKeyShiftTiming|StemTiming|StemTests.testMatchesReference'

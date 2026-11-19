@@ -1,6 +1,6 @@
 # Ship as a native macOS app, local-first, with no backend
 
-Harmonizer ships to the public as the existing native Swift macOS app. All audio work (analysis, stretching, stems, rendering) runs on the user's Mac. There is no server-side processing, and "cloud" means only free static hosting: the download, the update feed and the website. We rejected two alternatives:
+Pregame ships to the public as the existing native Swift macOS app. All audio work (analysis, stretching, stems, rendering) runs on the user's Mac. There is no server-side processing, and "cloud" means only free static hosting: the download, the update feed and the website. We rejected two alternatives:
 
 - **A cross-platform rewrite (Tauri, Electron, or a Windows port).** It would throw away a fast Swift engine built on Core ML and Accelerate.
 - **A web app with a cloud backend.** Stem separation on cloud GPUs isn't free at scale. Worse, storing and processing users' commercial music on our servers creates copyright and DMCA exposure that a free project can't carry.

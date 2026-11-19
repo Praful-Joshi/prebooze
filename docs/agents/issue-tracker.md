@@ -13,7 +13,7 @@ Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all op
 
 Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
 
-Repo: https://github.com/Praful-Joshi/prebooze (public). Local folder linked as `origin` on 2026-11-18.
+Repo: https://github.com/Praful-Joshi/pregame (public). Local folder linked as `origin` on 2026-11-18.
 
 ## Pull requests as a triage surface
 

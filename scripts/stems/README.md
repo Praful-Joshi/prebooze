@@ -1,6 +1,6 @@
 # Stem model (Demucs htdemucs → ONNX)
 
-Harmonizer separates stems with Demucs v4 (`htdemucs`, MIT) running in ONNX Runtime (MIT, Core ML provider). The app ships `Models/htdemucs.onnx` and `Models/htdemucs.onnx.data`. The STFT/iSTFT, segmentation and overlap-add are done in Swift (`Sources/HarmonizerCore/Stems.swift`).
+Pregame separates stems with Demucs v4 (`htdemucs`, MIT) running in ONNX Runtime (MIT, Core ML provider). The app ships `Models/htdemucs.onnx` and `Models/htdemucs.onnx.data`. The STFT/iSTFT, segmentation and overlap-add are done in Swift (`Sources/PregameCore/Stems.swift`).
 
 ## Rebuild the model
 
@@ -16,7 +16,7 @@ cp out/htdemucs.onnx out/htdemucs.onnx.data ../../Models/
 ## Check it
 
 - `ref_np.py <44.1 kHz wav> <htdemucs.onnx>`: the same algorithm in NumPy, compared with PyTorch Demucs. Expect 80–95 dB agreement per stem. It writes `ref_in.npy`/`ref_out.npy`.
-- `HARMONIZER_STEM_REF=<dir with those npy files> swift test -c release --filter StemTests`: the Swift pipeline against the NumPy reference. Expect about 110–130 dB.
+- `PREGAME_STEM_REF=<dir with those npy files> swift test -c release --filter StemTests`: the Swift pipeline against the NumPy reference. Expect about 110–130 dB.
 
 ## Benchmarks (Apple M4, 2026-10-23)
 
