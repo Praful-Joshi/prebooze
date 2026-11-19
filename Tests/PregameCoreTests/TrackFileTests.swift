@@ -102,12 +102,12 @@ final class TrackFileTests: XCTestCase {
         XCTAssertEqual(missing.map(\.folder.path), [folder("Old").path, folder("Other").path])
         XCTAssertEqual(missing.map(\.trackNames), [["a", "b"], ["c"]])
 
-        XCTAssertEqual(opened.relocate(folder("Old"), to: folder("New")), 2)
+        XCTAssertEqual(opened.relocate(folder("Old"), to: folder("New"), holding: TrackFileAccess()), 2)
         XCTAssertEqual(opened.tracks[0].path, folder("New/a.wav").path)
         XCTAssertEqual(opened.tracks[1].path, folder("New/Sub/b.wav").path)
         XCTAssertEqual(opened.missingFolders().map(\.folder.path), [folder("Other").path])
 
-        XCTAssertEqual(opened.relocate(folder("Other"), to: folder("Elsewhere")), 1)
+        XCTAssertEqual(opened.relocate(folder("Other"), to: folder("Elsewhere"), holding: TrackFileAccess()), 1)
         XCTAssertEqual(opened.missingFolders(), [])
         XCTAssertTrue(opened.tracks.allSatisfy { $0.bookmark != nil })
 
@@ -128,7 +128,7 @@ final class TrackFileTests: XCTestCase {
         try fm.removeItem(at: folder("Old"))
         opened.locateFiles(holding: TrackFileAccess())
 
-        XCTAssertEqual(opened.relocate(folder("Old"), to: folder("New")), 1)
+        XCTAssertEqual(opened.relocate(folder("Old"), to: folder("New"), holding: TrackFileAccess()), 1)
         XCTAssertEqual(opened.missingFolders().map(\.id), [folder("Old").path])
         XCTAssertEqual(opened.missingFolders().map(\.trackNames), [["Someone - b"]])
         XCTAssertEqual(opened.tracks.count, 2, "the Mix keeps the missing Track")
@@ -141,5 +141,21 @@ final class TrackFileTests: XCTestCase {
         let opened = try reopen(project)
         XCTAssertEqual(opened.missingFolders().map(\.id), [folder("Music").path])
         XCTAssertEqual(opened.missingFolders().map(\.trackNames), [["a"]])
+    }
+
+    func testSavingBookmarksTracksAddedWithoutOne() throws {
+        // Import Harmonize Run makes Tracks from paths alone.
+        var project = MixProject()
+        project.tracks = [ProjectTrack(path: try audioFile("Music/a.wav").path, title: "a", artist: ""),
+                          ProjectTrack(path: folder("Gone/b.wav").path, title: "b", artist: "")]
+        let saved = try MixProject.fromFileData(try project.bookmarkingReachableFiles().fileData())
+        XCTAssertNotNil(saved.tracks[0].bookmark)
+        XCTAssertNil(saved.tracks[1].bookmark, "a file that isn't there can't be bookmarked")
+    }
+
+    func testMissingFolderStartsLookingFromWhatStillExists() throws {
+        try audioFile("Music/a.wav")
+        let m = MissingFolder(folder: folder("Music/Gone/Deeper"), trackNames: [])
+        XCTAssertEqual(m.nearestExistingFolder?.path, folder("Music").path)
     }
 }

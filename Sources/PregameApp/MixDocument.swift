@@ -1,3 +1,4 @@
+import AppKit
 import PregameCore
 import SwiftUI
 import UniformTypeIdentifiers
@@ -18,6 +19,8 @@ final class MixDocument: ReferenceFileDocument {
     @Published var project: MixProject
     /// Access to the Tracks' files, held for as long as the Mix is open.
     let fileAccess: TrackFileAccess
+    /// Opening found moved files or refreshed bookmarks, which the Mix should save.
+    private(set) var locatedChanges = false
 
     init() {
         project = MixProject()
@@ -28,14 +31,24 @@ final class MixDocument: ReferenceFileDocument {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
-        var project = try MixProject.fromFileData(data)
+        let saved = try MixProject.fromFileData(data)
+        var project = saved
         let access = TrackFileAccess()
         project.locateFiles(holding: access)
         self.project = project
         fileAccess = access
+        locatedChanges = project != saved
     }
 
-    func snapshot(contentType: UTType) throws -> MixProject { project }
+    func snapshot(contentType: UTType) throws -> MixProject { project.bookmarkingReachableFiles() }
+
+    /// Marks the window's document edited once if opening changed the Mix, so
+    /// the new locations get saved.
+    func markLocatedChanges(in window: NSWindow) {
+        guard locatedChanges else { return }
+        locatedChanges = false
+        NSDocumentController.shared.document(for: window)?.updateChangeCount(.changeDone)
+    }
 
     func fileWrapper(snapshot: MixProject, configuration: WriteConfiguration) throws -> FileWrapper {
         FileWrapper(regularFileWithContents: try snapshot.fileData())

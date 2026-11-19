@@ -10,7 +10,7 @@ struct RelocateSheet: View {
     var onFound: () -> Void
     @Environment(\.undoManager) private var undo
     @Environment(\.dismiss) private var dismiss
-    @State private var notFoundIn: String?
+    @State private var emptyPickedFolder: String?
 
     private static let shownNames = 4
 
@@ -32,8 +32,8 @@ struct RelocateSheet: View {
                 }
                 .frame(maxHeight: 360)
             }
-            if let notFoundIn {
-                Label("No missing tracks were in “\(notFoundIn)”.", systemImage: "exclamationmark.triangle.fill")
+            if let emptyPickedFolder {
+                Label("No missing tracks were in “\(emptyPickedFolder)”.", systemImage: "exclamationmark.triangle.fill")
                     .font(.callout).foregroundStyle(Ink.warning)
             }
             HStack {
@@ -49,7 +49,7 @@ struct RelocateSheet: View {
 
     private func row(_ m: MissingFolder) -> some View {
         HStack(alignment: .top, spacing: Space.l) {
-            Image(systemName: "folder.badge.questionmark").font(.title2).foregroundStyle(.secondary)
+            Image(systemName: "folder.badge.questionmark").font(.title2).foregroundStyle(Ink.missing)
             VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(m.folder.lastPathComponent).fontWeight(.medium)
                 Text(m.folder.path).font(.caption).foregroundStyle(.secondary)
@@ -57,7 +57,7 @@ struct RelocateSheet: View {
                 Text(names(m)).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Locate…") { locate(m.folder) }
+            Button("Locate…") { locate(m) }
         }
     }
 
@@ -67,23 +67,15 @@ struct RelocateSheet: View {
         return more > 0 ? "\(shown) and \(more) more" : shown
     }
 
-    private func locate(_ folder: URL) {
+    private func locate(_ m: MissingFolder) {
         guard let picked = Panels.chooseFolder(prompt: "Locate",
-                                               message: "Where is “\(folder.lastPathComponent)” now?",
-                                               start: nearestExisting(folder)) else { return }
+                                               message: "Where is “\(m.folder.lastPathComponent)” now?",
+                                               start: m.nearestExistingFolder) else { return }
         var found = 0
-        document.perform("Locate Folder", undo: undo) { found = $0.relocate(folder, to: picked) }
-        notFoundIn = found == 0 ? picked.lastPathComponent : nil
-        if found > 0 { onFound() }
-    }
-
-    /// Start the panel as close to the old folder as still exists.
-    private func nearestExisting(_ folder: URL) -> URL? {
-        var url = folder
-        while url.pathComponents.count > 1 {
-            url = url.deletingLastPathComponent()
-            if FileManager.default.fileExists(atPath: url.path) { return url }
+        document.perform("Locate Folder", undo: undo) {
+            found = $0.relocate(m.folder, to: picked, holding: document.fileAccess)
         }
-        return nil
+        emptyPickedFolder = found == 0 ? picked.lastPathComponent : nil
+        if found > 0 { onFound() }
     }
 }

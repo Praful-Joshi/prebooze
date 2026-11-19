@@ -29,6 +29,16 @@ public struct MissingFolder: Hashable, Identifiable, Sendable {
     public var trackNames: [String]
     public var id: String { folder.path }
 
+    /// The closest folder above this one that still exists, to start looking from.
+    public var nearestExistingFolder: URL? {
+        var url = folder
+        while url.pathComponents.count > 1 {
+            url = url.deletingLastPathComponent()
+            if FileManager.default.fileExists(atPath: url.path) { return url }
+        }
+        return nil
+    }
+
     public init(folder: URL, trackNames: [String]) {
         self.folder = folder
         self.trackNames = trackNames
@@ -68,37 +78,58 @@ extension MixProject {
     }
 
     /// The Tracks that were under `folder` are now under `newFolder`: point
-    /// every unreachable one whose file is there at it, with a fresh bookmark.
-    /// Picking the same folder again grants access to it. Returns how many
-    /// Tracks were found.
+    /// every unreachable one whose file is there at it, with a fresh bookmark
+    /// and access held. Picking the same folder again grants access to it.
+    /// Returns how many Tracks were found.
     @discardableResult
-    public mutating func relocate(_ folder: URL, to newFolder: URL) -> Int {
+    public mutating func relocate(_ folder: URL, to newFolder: URL, holding access: TrackFileAccess) -> Int {
         let old = folder.path, new = newFolder.path
         var found = 0
         for i in tracks.indices where isInside(tracks[i].path, old) && !isReachable(tracks[i].path) {
             let candidate = (new as NSString).appendingPathComponent(String(tracks[i].path.dropFirst(old.count)))
             guard isReachable(candidate) else { continue }
             tracks[i].path = candidate
-            tracks[i].bookmark = makeBookmark(URL(fileURLWithPath: candidate))
+            tracks[i].bookmark = nil
+            tracks[i].locateFile(holding: access)
             found += 1
         }
         return found
+    }
+
+    /// The Mix as saved: every reachable Track has a bookmark, including ones
+    /// added without one (imported runs).
+    public func bookmarkingReachableFiles() -> MixProject {
+        var p = self
+        for i in p.tracks.indices where p.tracks[i].bookmark == nil && isReachable(p.tracks[i].path) {
+            p.tracks[i].refreshBookmark(at: p.tracks[i].url)
+        }
+        return p
     }
 }
 
 extension ProjectTrack {
     mutating func locateFile(holding access: TrackFileAccess) {
-        var stale = false
-        if let bookmark,
-           let resolved = try? URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope, .withoutUI],
-                                   relativeTo: nil, bookmarkDataIsStale: &stale) {
+        if let (resolved, stale) = resolveBookmark() {
             access.hold(resolved)
             if canonical(resolved.path) != canonical(path) { path = resolved.path }
-            if stale { self.bookmark = makeBookmark(resolved) ?? bookmark }
+            if stale { refreshBookmark(at: resolved) }
         } else if isReachable(path) {
             // An older Mix, or a file replaced in place: bookmark what's there now.
-            bookmark = makeBookmark(url) ?? bookmark
+            refreshBookmark(at: url)
+            if let (resolved, _) = resolveBookmark() { access.hold(resolved) }
         }
+    }
+
+    private func resolveBookmark() -> (URL, stale: Bool)? {
+        guard let bookmark else { return nil }
+        var stale = false
+        guard let url = try? URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope, .withoutUI],
+                                 relativeTo: nil, bookmarkDataIsStale: &stale) else { return nil }
+        return (url, stale)
+    }
+
+    mutating func refreshBookmark(at url: URL) {
+        bookmark = makeBookmark(url) ?? bookmark
     }
 }
 

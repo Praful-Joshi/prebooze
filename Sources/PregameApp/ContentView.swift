@@ -66,7 +66,11 @@ struct ContentView: View {
         .sheet(isPresented: $showCompare) { CompareSheet(document: document) }
         .sheet(isPresented: $showExport) { ExportSheet(document: document, windowTitle: window?.title ?? "Mix") }
         .sheet(isPresented: $showRelocate) {
-            RelocateSheet(document: document) { analysis.retryFailed(in: document) }
+            RelocateSheet(document: document) {
+                analysis.retryFailed(in: document)
+                stems.retry(document.project.tracks)
+                requestStems()
+            }
         }
         .sheet(item: $infoTrack) { t in
             VStack(alignment: .leading, spacing: Space.xl) {
@@ -92,6 +96,7 @@ struct ContentView: View {
             showRelocate = !document.project.missingFolders().isEmpty
         }
         .onDisappear { player.pause(); player.engine.stop() }
+        .onChange(of: window) { if let window { document.markLocatedChanges(in: window) } }
         .onChange(of: document.project.tracks.count) { analysis.analyseMissing(in: document) }
         .onChange(of: document.project) { player.refresh(); editor.refresh(); requestStems() }
         .onChange(of: editor.index) { requestStems() }

@@ -55,6 +55,11 @@ final class StemController: ObservableObject {
 
     func retry(_ hash: String) { failures[hash] = nil }
 
+    /// Forget these Tracks' failures (their files may have been found).
+    func retry(_ tracks: [ProjectTrack]) {
+        for h in tracks.compactMap(\.contentHash) { failures[h] = nil }
+    }
+
     // MARK: STEM files for Mixxx
 
     @Published private(set) var exporting: (done: Int, total: Int, current: String)?
