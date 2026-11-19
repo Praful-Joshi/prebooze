@@ -106,10 +106,10 @@ jobs:
 
       - name: Build twice
         run: |
-          scripts/build-app.sh
-          codesign --display --requirements - build/Pregame.app 2>/dev/null | sed -n 's/^designated => //p' > "$RUNNER_TEMP/first"
-          scripts/build-app.sh
-          codesign --display --requirements - build/Pregame.app 2>/dev/null | sed -n 's/^designated => //p' > "$RUNNER_TEMP/second"
+          for build in first second; do
+            scripts/build-app.sh
+            codesign --display --requirements - build/Pregame.app 2>/dev/null | sed -n 's/^designated => //p' > "$RUNNER_TEMP/$build"
+          done
 
       - name: Same designated requirement, hardened runtime
         run: |
@@ -118,5 +118,5 @@ jobs:
           diff "$RUNNER_TEMP/first" "$RUNNER_TEMP/second"
           codesign --verify --strict -R="$(cat "$RUNNER_TEMP/first")" build/Pregame.app
           for code in build/Pregame.app build/Pregame.app/Contents/Frameworks/*.dylib; do
-            codesign --display --verbose "$code" 2>&1 | grep -q 'flags=0x10000(runtime)' || { echo "$code: no hardened runtime"; exit 1; }
+            codesign --display --verbose "$code" 2>&1 | grep -Eq 'flags=0x[0-9a-f]+\([^)]*runtime' || { echo "$code: no hardened runtime"; exit 1; }
           done

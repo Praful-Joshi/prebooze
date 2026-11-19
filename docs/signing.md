@@ -27,11 +27,13 @@ Don't create a second certificate. A new certificate is a new designated require
 
 ## On a new Mac, or after losing the keychain
 
-Restore the backup instead of creating a new certificate:
+Restore the backup instead of creating a new certificate. macOS asks for the backup's passphrase:
 
 ```sh
 security import ~/Documents/pregame-signing.p12 -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign
 ```
+
+Release builds signed in CI ([#11](https://github.com/Praful-Joshi/pregame/issues/11)) must import this same backup as a secret. A different certificate would make every update a different app to macOS, and Mix Hosts would lose the folder access they granted.
 
 ## Checking it
 
@@ -47,7 +49,9 @@ Two builds should print the same line. To check that a new build satisfies an ea
 codesign --verify --strict -R='identifier "com.prafuljoshi.pregame" and certificate leaf = H"…"' build/Pregame.app
 ```
 
-CI does the same with a throwaway certificate on every push (the `signed-app` job in `.github/workflows/ci.yml`).
+To see it for real, grant a folder macOS protects (Downloads, Desktop, Documents or an external drive), rebuild, and reopen a Mix from it: no prompt should appear. The first build after switching from ad hoc signing asks once more, because its identity is new.
+
+CI checks the requirement with a throwaway certificate on every push (the `signed-app` job in `.github/workflows/ci.yml`).
 
 ## Hardened runtime and bundled libraries
 

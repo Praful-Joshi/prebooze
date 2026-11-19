@@ -19,8 +19,14 @@ if [[ -e "$BACKUP" ]]; then
   echo "error: $BACKUP already exists; choose another path" >&2
   exit 1
 fi
-if security find-certificate -c "$IDENTITY" "$KEYCHAIN" >/dev/null 2>&1; then
-  echo "error: \"$IDENTITY\" is already in $KEYCHAIN. Every build must use the same one;" >&2
+if [[ ! -d "${BACKUP:h}" || ! -w "${BACKUP:h}" ]]; then
+  echo "error: can't write the backup into ${BACKUP:h}" >&2
+  exit 1
+fi
+# The same exact-name lookup build-app.sh signs with, in every keychain it searches.
+EXISTING="$({ security find-identity -p codesigning; security find-identity -p codesigning "$KEYCHAIN"; } 2>/dev/null || true)"
+if grep -qF "\"$IDENTITY\"" <<< "$EXISTING"; then
+  echo "error: \"$IDENTITY\" is already in your keychains. Every build must use the same one;" >&2
   echo "a second certificate would make macOS treat the next build as a different app." >&2
   exit 1
 fi
@@ -61,13 +67,14 @@ export_p12() {  # <out> <passphrase>, passed through the environment, not argv
     -inkey "$WORK/key.pem" -in "$WORK/cert.pem" -out "$1" -passout env:PREGAME_P12_PASS
 }
 
+# Backup first: an identity in the keychain without one can't be recovered.
+(umask 077; export_p12 "$BACKUP" "$PASSPHRASE")
+
 # `security import` takes the passphrase as an argument, so it gets a copy
 # locked with a one-time passphrase; the backup's never leaves this process.
 IMPORT_PASS="$(/usr/bin/openssl rand -hex 32)"
 export_p12 "$WORK/import.p12" "$IMPORT_PASS"
 security import "$WORK/import.p12" -k "$KEYCHAIN" -P "$IMPORT_PASS" -T /usr/bin/codesign >/dev/null
-
-(umask 077; export_p12 "$BACKUP" "$PASSPHRASE")
 
 echo "Created \"$IDENTITY\" in $KEYCHAIN"
 echo "Backup: $BACKUP. Store it and its passphrase somewhere safe (a password manager), never in the repo."

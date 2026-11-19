@@ -9,9 +9,11 @@ final class SigningTests: XCTestCase {
     private static let root = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
-    private func run(_ script: String, environment: [String: String]) throws -> (status: Int32, output: String) {
+    private func run(_ executable: URL, _ arguments: [String] = [],
+                     environment: [String: String] = [:]) throws -> (status: Int32, output: String) {
         let process = Process()
-        process.executableURL = Self.root.appendingPathComponent(script)
+        process.executableURL = executable
+        process.arguments = arguments
         process.environment = ProcessInfo.processInfo.environment.merging(environment) { $1 }
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -26,7 +28,7 @@ final class SigningTests: XCTestCase {
     /// how to create it, instead of silently falling back to ad hoc signing.
     func testTheBuildFailsClearlyWithoutTheSigningIdentity() throws {
         let missing = "Pregame Missing Identity \(UUID().uuidString)"
-        let result = try run("scripts/build-app.sh", environment: ["PREGAME_SIGNING_IDENTITY": missing])
+        let result = try run(Self.root.appendingPathComponent("scripts/build-app.sh"), environment: ["PREGAME_SIGNING_IDENTITY": missing])
         XCTAssertNotEqual(result.status, 0)
         XCTAssertTrue(result.output.contains(missing), result.output)
         XCTAssertTrue(result.output.contains("scripts/make-signing-identity.sh"), result.output)
@@ -37,15 +39,9 @@ final class SigningTests: XCTestCase {
     /// The certificate and its key live in the developer's keychain and backup,
     /// never in the repo.
     func testNoSigningKeysAreCommitted() throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = ["-C", Self.root.path, "ls-files"]
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        try process.run()
-        let files = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-        process.waitUntilExit()
-        XCTAssertEqual(process.terminationStatus, 0)
+        let git = try run(URL(fileURLWithPath: "/usr/bin/git"), ["-C", Self.root.path, "ls-files"])
+        XCTAssertEqual(git.status, 0, git.output)
+        let files = git.output
         let keyExtensions: Set = ["p12", "pfx", "pem", "key", "cer", "crt", "p8", "keychain", "keychain-db"]
         let keys = files.split(separator: "\n").filter { keyExtensions.contains(($0 as NSString).pathExtension.lowercased()) }
         XCTAssertEqual(keys, [])
