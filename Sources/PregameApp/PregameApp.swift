@@ -50,6 +50,7 @@ struct PregameApp: App {
                 Button("Export STEM Files for Mixxx…") { post(.exportStemFiles) }
                 Divider()
                 Button("Write Overrides to File Tags") { post(.writeTags) }
+                Button("Locate Missing Tracks…") { post(.locateMissing) }
                 Button("Get Info") { post(.getInfo) }.keyboardShortcut("i", modifiers: .command)
             }
         }
@@ -75,6 +76,7 @@ extension Notification.Name {
     static let writeTags = Notification.Name("writeTags")
     static let exportMix = Notification.Name("exportMix")
     static let getInfo = Notification.Name("getInfo")
+    static let locateMissing = Notification.Name("locateMissing")
     static let separateAll = Notification.Name("separateAll")
     static let exportStemFiles = Notification.Name("exportStemFiles")
 }

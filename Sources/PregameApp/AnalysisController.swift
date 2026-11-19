@@ -16,6 +16,12 @@ final class AnalysisController: ObservableObject {
 
     var progress: Double { total == 0 ? 0 : Double(done) / Double(total) }
 
+    /// Try the tracks that failed again (their files may have been found).
+    func retryFailed(in document: MixDocument) {
+        failures = []
+        analyseMissing(in: document)
+    }
+
     /// Analyse every track that has no analysis yet.
     func analyseMissing(in document: MixDocument) {
         // Missing, or cached by an older analysis version (re-analysed for structure).

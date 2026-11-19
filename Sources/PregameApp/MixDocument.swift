@@ -16,16 +16,23 @@ final class MixDocument: ReferenceFileDocument {
     static var writableContentTypes: [UTType] { [.hmix] }
 
     @Published var project: MixProject
+    /// Access to the Tracks' files, held for as long as the Mix is open.
+    let fileAccess: TrackFileAccess
 
     init() {
         project = MixProject()
+        fileAccess = TrackFileAccess()
     }
 
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
-        project = try MixProject.fromFileData(data)
+        var project = try MixProject.fromFileData(data)
+        let access = TrackFileAccess()
+        project.locateFiles(holding: access)
+        self.project = project
+        fileAccess = access
     }
 
     func snapshot(contentType: UTType) throws -> MixProject { project }
