@@ -23,6 +23,13 @@
 		<string>/Library/Preferences/com.prafuljoshi.pregame.plist</string>
 		<string>/Library/Preferences/com.prafuljoshi.harmonizer.plist</string>
 	</array>
+	<!-- Sparkle's Installer XPC service, which installs updates from outside the
+	     sandbox (docs/updates.md). The names are the bundle ID plus -spks/-spki. -->
+	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
+	<array>
+		<string>com.prafuljoshi.pregame-spks</string>
+		<string>com.prafuljoshi.pregame-spki</string>
+	</array>
 	<!-- The hardened runtime only loads libraries signed by the same team, and a
 	     self-signed certificate has no team, so the app couldn't load its bundled
 	     TagLib and ONNX Runtime without this. See docs/signing.md. -->

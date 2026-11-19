@@ -34,6 +34,7 @@ cp scripts/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"   # from scripts/
 cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
 cp Vendor/onnxruntime/LICENSE "$APP/Contents/Resources/ONNXRUNTIME_LICENSE"
 cp Sources/QMDSP/COPYING "$APP/Contents/Resources/QMDSP_COPYING"
+cp .build/checkouts/Sparkle/LICENSE "$APP/Contents/Resources/SPARKLE_LICENSE"
 
 # Bundle TagLib so the app doesn't depend on Homebrew at runtime.
 cp "$TAGLIB" "$APP/Contents/Frameworks/libtag.2.dylib"
@@ -41,6 +42,19 @@ chmod u+w "$APP/Contents/Frameworks/libtag.2.dylib"
 install_name_tool -id "@rpath/libtag.2.dylib" "$APP/Contents/Frameworks/libtag.2.dylib"
 install_name_tool -change "$TAGLIB" "@rpath/libtag.2.dylib" "$APP/Contents/MacOS/Pregame"
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/Pregame"
+
+# Sparkle (updates, docs/updates.md), straight from the pinned package's
+# xcframework: the build's own copy lands in a different folder depending on
+# the build system. ditto keeps the
+# framework's symlinks. Drop the rpath into the build folder, so even on this
+# Mac the app loads the embedded copy and its XPC services.
+SPARKLE=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
+for rpath in $(otool -l "$APP/Contents/MacOS/Pregame" | awk '/LC_RPATH/ {getline; getline; print $2}'); do
+  if [[ "$rpath" == "$PWD/.build/"* ]]; then
+    install_name_tool -delete_rpath "$rpath" "$APP/Contents/MacOS/Pregame"
+  fi
+done
 
 # ONNX Runtime (stems) and the Demucs model (exported to ONNX, see README).
 cp Vendor/onnxruntime/lib/libonnxruntime.1.dylib "$APP/Contents/Frameworks/libonnxruntime.1.dylib"
@@ -52,10 +66,25 @@ else
   echo "warning: Models/htdemucs.onnx.data is missing, so this build can't separate stems (scripts/stems/README.md)." >&2
 fi
 
+# Sparkle lifts the quarantine flag from an update's files after checking its
+# signature, and can't from a file it can't write (SwiftPM checks packages out
+# read-only), so make everything user-writable before sealing it.
+chmod -R u+w "$APP"
+
 # Libraries first, then the app, whose signature seals everything inside it.
+# Sparkle's helpers are signed inside out with the app's identity, so an update
+# satisfies the installed app's designated requirement. The Downloader gets
+# Sparkle's own entitlements for it (sandbox plus network), which its packaged
+# copy doesn't carry; the app itself has no network access.
 SIGN=(codesign --force --sign "$IDENTITY" --options runtime --timestamp=none)
 "${SIGN[@]}" "$APP/Contents/Frameworks/libonnxruntime.1.dylib"
 "${SIGN[@]}" "$APP/Contents/Frameworks/libtag.2.dylib"
+SPARKLE_B="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+"${SIGN[@]}" "$SPARKLE_B/XPCServices/Installer.xpc"
+"${SIGN[@]}" --entitlements .build/checkouts/Sparkle/Downloader/Downloader.entitlements "$SPARKLE_B/XPCServices/Downloader.xpc"
+"${SIGN[@]}" "$SPARKLE_B/Autoupdate"
+"${SIGN[@]}" "$SPARKLE_B/Updater.app"
+"${SIGN[@]}" "$APP/Contents/Frameworks/Sparkle.framework"
 "${SIGN[@]}" --entitlements scripts/Pregame.entitlements "$APP"
 codesign --verify --strict --deep "$APP"
 echo "Built $APP"

@@ -31,6 +31,8 @@ scripts/build-app.sh --install   # release build of Pregame.app into /Applicatio
 
 `build-app.sh` signs the app with one self-signed certificate, so macOS keeps the folder access you grant it across rebuilds. Create the certificate once, and keep its backup out of the repo; see [docs/signing.md](docs/signing.md).
 
+The app updates itself with Sparkle from an EdDSA-signed appcast on GitHub Releases. `scripts/make-appcast.sh <dmg>` generates and signs the appcast for a release; see [docs/updates.md](docs/updates.md).
+
 `build-app.sh` also bundles the Demucs stem model (`Models/htdemucs.onnx.data`, 161 MB), which isn't in the repo. Export it as described in [`scripts/stems/README.md`](scripts/stems/README.md); everything except stem separation works without it.
 
 Every pull request and every push to `main` is built and tested by [GitHub Actions](.github/workflows/ci.yml). More developer detail is under [Developing](#developing).

@@ -26,6 +26,27 @@
     <string>NSApplication</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <!-- Updates (Sparkle, docs/updates.md). Each GitHub Release carries the
+         appcast for its version; the app accepts only an appcast and updates
+         signed with the private half of this EdDSA key. -->
+    <key>SUFeedURL</key>
+    <string>https://github.com/Praful-Joshi/pregame/releases/latest/download/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>2r7nnwr704fTNIrkFHQV6ntlQOHrH8Qgp9piLWKfrhs=</string>
+    <key>SURequireSignedFeed</key>
+    <true/>
+    <!-- Sparkle won't start with a signed feed unless this is on too. -->
+    <key>SUVerifyUpdateBeforeExtraction</key>
+    <true/>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <!-- In the sandbox, Sparkle installs through its Installer XPC service and
+         downloads through its Downloader XPC service, so the app itself needs
+         no network access. -->
+    <key>SUEnableInstallerLauncherService</key>
+    <true/>
+    <key>SUEnableDownloaderService</key>
+    <true/>
     <key>CFBundleDocumentTypes</key>
     <array>
         <dict>
