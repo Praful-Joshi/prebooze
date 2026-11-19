@@ -6,7 +6,7 @@ let vendor = Context.packageDirectory + "/Vendor"
 
 let package = Package(
     name: "Harmonizer",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "Harmonizer", targets: ["HarmonizerApp"]),
     ],

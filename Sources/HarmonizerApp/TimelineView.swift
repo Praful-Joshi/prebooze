@@ -18,7 +18,9 @@ struct MixTimelineView: View {
     @State private var waves: [UUID: WaveformSummary] = [:]
     @State private var drag: (deck: Int, dx: CGFloat)?
     @State private var hover: CGPoint?
-    @State private var scroller = TimelineScroller()
+    @State private var scroll = ScrollPosition(edge: .leading)
+    @State private var scrollX: CGFloat = 0
+    @State private var lastUserScroll = Date.distantPast
     @State private var lastReveal = Date.distantPast
     @State private var hoverTile: CGFloat = 0
 
@@ -39,8 +41,10 @@ struct MixTimelineView: View {
                         }
                         .overlay(alignment: .topLeading) { playhead(pps: pps) }
                         .overlay(alignment: .topLeading) { hoverCard(layout, pps: pps) }
-                        .background { TimelineScrollProbe(scroller: scroller) }
                     }
+                    .scrollPosition($scroll)
+                    .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.x }) { _, x in scrollX = x }
+                    .onScrollPhaseChange { _, phase in if phase == .interacting { lastUserScroll = .now } }
                     .onChange(of: player.revealToken) {
                         reveal(pps: pps, viewWidth: geo.size.width, contentWidth: width)
                     }
@@ -95,18 +99,18 @@ struct MixTimelineView: View {
         let a = CGFloat(Double(r.lowerBound) / mixSampleRate * pps), b = CGFloat(Double(r.upperBound) / mixSampleRate * pps)
         let target = b - a <= viewWidth * 0.9 ? (a + b) / 2 - viewWidth / 2 : a - viewWidth * 0.05
         lastReveal = .now
-        scroller.scroll(toX: min(max(0, target), contentWidth - viewWidth))
+        withAnimation(Motion.glide) { scroll.scrollTo(x: min(max(0, target), contentWidth - viewWidth)) }
     }
 
     private func follow(pps: Double, viewWidth: CGFloat, contentWidth: CGFloat) {
         // Playing, or a jump while paused (the position only changes then).
         // Stands aside briefly after the user scrolls or a song is revealed.
-        guard contentWidth > viewWidth + 1, Date.now.timeIntervalSince(scroller.lastUserScroll) > 4,
+        guard contentWidth > viewWidth + 1, Date.now.timeIntervalSince(lastUserScroll) > 4,
               Date.now.timeIntervalSince(lastReveal) > 1 else { return }
         let x = CGFloat(Double(player.position) / mixSampleRate * pps)
-        guard x < scroller.offsetX + viewWidth * 0.05 || x > scroller.offsetX + viewWidth * 0.85 else { return }
+        guard x < scrollX + viewWidth * 0.05 || x > scrollX + viewWidth * 0.85 else { return }
         let target = min(max(0, x - viewWidth * 0.2), contentWidth - viewWidth)
-        scroller.scroll(toX: target)
+        withAnimation(Motion.glide) { scroll.scrollTo(x: target) }
     }
 
     private func loadWaves() {

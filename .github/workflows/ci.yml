@@ -13,8 +13,14 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Build and test
-    runs-on: macos-26
+    name: Build and test (${{ matrix.os }})
+    # macOS 15 is the oldest supported system (and the oldest GitHub offers).
+    # Homebrew's libraries there target 15, so the app and tests really run on it.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
       HOMEBREW_NO_AUTO_UPDATE: "1"
@@ -23,6 +29,14 @@ jobs:
     steps:
       # Third-party actions are pinned to commit SHAs.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # macos-15's default Xcode is older than the one the code needs; use its
+      # newest release Xcode (betas excluded).
+      - name: Select Xcode
+        if: matrix.os == 'macos-15'
+        run: |
+          ls -d /Applications/Xcode*.app
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)"
 
       - name: Toolchain
         run: |

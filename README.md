@@ -13,7 +13,7 @@ Prebooze is for the **Mix Host**: someone throwing a house party who wants the m
 ## System requirements
 
 - A Mac with **Apple Silicon** (M1 or later). Intel Macs are not supported.
-- **macOS 14 Sonoma or later.**
+- **macOS 15 Sequoia or later.**
 - Music files you own: MP3, M4A/AAC, FLAC, WAV or AIFF. Streaming services can't be used.
 
 ## Building from source
@@ -237,7 +237,7 @@ scripts/build-app.sh --install  # release .app → /Applications
 - Homebrew `taglib` (bundled into the .app), `rubberband`, `libsamplerate`, `lame`, `mpg123` (linked statically)
 - ONNX Runtime 1.31.0 in `Vendor/onnxruntime/lib`, fetched and checksum-verified by `scripts/fetch-vendor.sh`
 
-The deployment target is macOS 14. Anything newer must sit behind `#available` with a fallback. Homebrew builds its libraries for the macOS it runs on, so a local build only runs on that version of macOS or later. Release builds need those libraries built for macOS 14 ([#11](https://github.com/Praful-Joshi/prebooze/issues/11)).
+The deployment target is macOS 15, the oldest macOS that GitHub Actions still offers. CI builds and tests on macOS 15 and macOS 26, so every supported version is tested. Anything newer than 15 must sit behind `#available` with a fallback. Homebrew builds its libraries for the macOS it runs on, so a local build only runs on that version of macOS or later. Release builds need those libraries built for macOS 15 ([#11](https://github.com/Praful-Joshi/prebooze/issues/11)).
 
 **Tests** drive public behaviour (mostly through `MixProject`, plus the playback engine) and assert on what a Mix Host would notice: which Tracks play and in what order, Transition labels, lengths, and the audio frames produced. They are deterministic (seeded, with a fixed amount of solver work) and run offline. The test audio is generated in Swift, so no real music is committed.
 

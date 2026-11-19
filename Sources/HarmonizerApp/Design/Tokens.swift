@@ -43,11 +43,6 @@ enum Motion {
     static var settle: Animation { reduced ? reducedFade : .spring(response: 0.35, dampingFraction: 0.85) }
     /// The editor sliding to the next Transition, timeline follow-scroll.
     static var glide: Animation { reduced ? reducedFade : .smooth(duration: 0.45) }
-    /// `glide` for AppKit animations (the timeline's scroll). Nil with Reduce
-    /// Motion: a scroll can't fade, so it jumps.
-    static var glideAppKit: (duration: TimeInterval, timing: CAMediaTimingFunction)? {
-        reduced ? nil : (0.45, CAMediaTimingFunction(name: .default))
-    }
     /// Content swaps, loading → ready, sheet step changes.
     static var fade: Animation { .easeInOut(duration: 0.2) }
     /// Analysing dot, now-playing pulse. Nil (no loop) with Reduce Motion.

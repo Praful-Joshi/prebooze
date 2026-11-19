@@ -33,13 +33,16 @@ enum Palette {
 
     // MARK: Match
 
+    // Tuned to stay readable on both macOS 15's window colour (#ECECEC / #323232)
+    // and macOS 26's (#FFFFFF / #1E1E1E); CI checks both.
+
     static func match(_ m: Match) -> NSColor {
         switch m {
         case .smooth: dynamic(light: 0x116B2C, dark: 0x34D36B)
-        case .energyUp: dynamic(light: 0x9A4600, dark: 0xFF9F0A)
+        case .energyUp: dynamic(light: 0x954400, dark: 0xFF9F0A)
         case .energyDown: dynamic(light: 0x075F79, dark: 0x45C9E2)
-        case .keyChange: dynamic(light: 0x463DC9, dark: 0x9C97FF)
-        case .clash: dynamic(light: 0xB80018, dark: 0xFF6259)
+        case .keyChange: dynamic(light: 0x463DC9, dark: 0xADA9FF)
+        case .clash: dynamic(light: 0xB20017, dark: 0xFF938D)
         }
     }
 
@@ -92,8 +95,8 @@ enum Palette {
         let h = CGFloat((k.number - 1) % 12) / 12, minor = k.isMinor
         return NSColor(name: nil) { ap in
             isDark(ap)
-                ? NSColor(hue: h, saturation: minor ? 0.6 : 0.45, brightness: minor ? 0.95 : 1, alpha: 1)
-                : NSColor(hue: h, saturation: minor ? 0.85 : 0.7, brightness: minor ? 0.52 : 0.58, alpha: 1)
+                ? NSColor(hue: h, saturation: minor ? 0.55 : 0.45, brightness: minor ? 0.95 : 1, alpha: 1)
+                : NSColor(hue: h, saturation: minor ? 0.85 : 0.7, brightness: minor ? 0.52 : 0.54, alpha: 1)
         }
     }
 
