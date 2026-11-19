@@ -1,4 +1,4 @@
-// Renders Harmonizer's icon: the editor's own crossfade (orange fade-out,
+// Renders Pregame's icon: the editor's own crossfade (orange fade-out,
 // dashed blue fade-in) crossing on a dark squircle, glowing where the two
 // songs meet.  swift scripts/icon/make-icon.swift <out.png>
 import AppKit

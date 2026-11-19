@@ -5,10 +5,10 @@ let homebrew = "/opt/homebrew"
 let vendor = Context.packageDirectory + "/Vendor"
 
 let package = Package(
-    name: "Harmonizer",
+    name: "Pregame",
     platforms: [.macOS(.v15)],
     products: [
-        .executable(name: "Harmonizer", targets: ["HarmonizerApp"]),
+        .executable(name: "Pregame", targets: ["PregameApp"]),
     ],
     targets: [
         // Queen Mary DSP (GPL-2.0+), vendored from Mixxx 2.5, plus a C shim.
@@ -71,7 +71,7 @@ let package = Package(
             ]
         ),
         .target(
-            name: "HarmonizerCore",
+            name: "PregameCore",
             dependencies: ["QMDSP", "CTagLib", "CRubberBand", "CLame", "COnnx"],
             resources: [.process("Resources")],
             // Optimised in debug builds too: the engine's per-sample loops (analysis,
@@ -81,18 +81,18 @@ let package = Package(
             swiftSettings: [.unsafeFlags(["-O"], .when(configuration: .debug))]
         ),
         .executableTarget(
-            name: "HarmonizerApp",
-            dependencies: ["HarmonizerCore"],
+            name: "PregameApp",
+            dependencies: ["PregameCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(
-            name: "HarmonizerCoreTests",
-            dependencies: ["HarmonizerCore"],
+            name: "PregameCoreTests",
+            dependencies: ["PregameCore"],
             resources: [.copy("Fixtures")]
         ),
         .testTarget(
-            name: "HarmonizerAppTests",
-            dependencies: ["HarmonizerApp", "HarmonizerCore"],
+            name: "PregameAppTests",
+            dependencies: ["PregameApp", "PregameCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
     ],

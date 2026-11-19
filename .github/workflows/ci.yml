@@ -57,7 +57,7 @@ jobs:
         run: scripts/fetch-vendor.sh
 
       - name: Build the app
-        run: swift build --product Harmonizer
+        run: swift build --product Pregame
 
       - name: Build the tests
         run: swift build --build-tests

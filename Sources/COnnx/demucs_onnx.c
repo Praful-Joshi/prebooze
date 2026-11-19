@@ -44,7 +44,7 @@ hz_demucs *hz_demucs_open(const char *model_path, const char *cache_dir, int use
     if (!a) { snprintf(last_error, sizeof last_error, "ONNX Runtime API version mismatch"); return NULL; }
     hz_demucs *d = calloc(1, sizeof *d);
     OrtSessionOptions *opts = NULL;
-    if (failed(a->CreateEnv(ORT_LOGGING_LEVEL_ERROR, "harmonizer", &d->env))) goto fail;
+    if (failed(a->CreateEnv(ORT_LOGGING_LEVEL_ERROR, "pregame", &d->env))) goto fail;
     if (failed(a->CreateSessionOptions(&opts))) goto fail;
     if (failed(a->SetSessionGraphOptimizationLevel(opts, ORT_ENABLE_ALL))) goto fail;
     if (use_coreml) {

@@ -1,6 +1,6 @@
 # Open source under GPL-3.0, free to use
 
-Harmonizer is developed in a public repository under GPL-3.0 and given away free; donations are optional.
+Pregame is developed in a public repository under GPL-3.0 and given away free; donations are optional.
 
 Three reasons:
 - **The engine already depends on GPL code.** It uses Queen Mary DSP, vendored from Mixxx, and Rubber Band, which is GPL unless a commercial licence is bought. Distributing the app as closed source would mean replacing that code or paying for the licence.

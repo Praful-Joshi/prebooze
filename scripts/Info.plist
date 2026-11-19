@@ -5,13 +5,13 @@
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
     <key>CFBundleName</key>
-    <string>Harmonizer</string>
+    <string>Pregame</string>
     <key>CFBundleDisplayName</key>
-    <string>Harmonizer</string>
+    <string>Pregame</string>
     <key>CFBundleIdentifier</key>
-    <string>com.prafuljoshi.harmonizer</string>
+    <string>com.prafuljoshi.pregame</string>
     <key>CFBundleExecutable</key>
-    <string>Harmonizer</string>
+    <string>Pregame</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -30,13 +30,14 @@
     <array>
         <dict>
             <key>CFBundleTypeName</key>
-            <string>Harmonizer Mix</string>
+            <string>Pregame Mix</string>
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
             <key>LSHandlerRank</key>
             <string>Owner</string>
             <key>LSItemContentTypes</key>
             <array>
+                <string>com.prafuljoshi.pregame.hmix</string>
                 <string>com.prafuljoshi.harmonizer.hmix</string>
             </array>
         </dict>
@@ -45,9 +46,30 @@
     <array>
         <dict>
             <key>UTTypeIdentifier</key>
+            <string>com.prafuljoshi.pregame.hmix</string>
+            <key>UTTypeDescription</key>
+            <string>Pregame Mix</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>hmix</string>
+                </array>
+            </dict>
+        </dict>
+    </array>
+    <!-- Mix files as the app declared them when it was called Harmonizer. -->
+    <key>UTImportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>
             <string>com.prafuljoshi.harmonizer.hmix</string>
             <key>UTTypeDescription</key>
-            <string>Harmonizer Mix</string>
+            <string>Pregame Mix</string>
             <key>UTTypeConformsTo</key>
             <array>
                 <string>public.data</string>

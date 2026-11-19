@@ -1,6 +1,6 @@
 # Design system
 
-Prebooze looks like a Mac app first: system materials, SF Symbols, standard controls, and the system Light/Dark setting. On top of that it has one brand accent and a domain palette. Everything lives in `Sources/HarmonizerApp/Design/`, and `DesignTokenTests` fails the build if a colour is named anywhere else in the app.
+Pregame looks like a Mac app first: system materials, SF Symbols, standard controls, and the system Light/Dark setting. On top of that it has one brand accent and a domain palette. Everything lives in `Sources/PregameApp/Design/`, and `DesignTokenTests` fails the build if a colour is named anywhere else in the app.
 
 ## Colour
 

@@ -14,7 +14,7 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 ## File structure
 
 ```
-Harmonizer/
+pregame/
 ├── CONTEXT.md
 ├── docs/adr/
 │   └── 0001-<decision>.md

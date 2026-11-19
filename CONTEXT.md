@@ -1,6 +1,4 @@
-# Prebooze
-
-(Product name; the code and repo are still called Harmonizer until the rename.)
+# Pregame
 
 A free macOS app that lets non-professionals turn a pile of songs into a seamless, beat-matched mix for their own use, such as a house party.
 
