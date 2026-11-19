@@ -16,6 +16,7 @@ struct PregameApp: App {
         // File > Open and Open Recent still reach saved Mixes.
         UserDefaults.standard.register(defaults: ["NSShowAppCentricOpenPanelInsteadOfUntitledFile": false])
         outputs = AudioOutputs.shared
+        _ = Updates.shared   // starts the updater, so automatic checks run
     }
 
     var body: some Scene {
@@ -25,6 +26,7 @@ struct PregameApp: App {
                 .frame(minWidth: 1200, minHeight: 720)
         }
         .commands {
+            CommandGroup(after: .appInfo) { CheckForUpdatesButton() }
             CommandGroup(after: .newItem) {
                 Divider()
                 Button("Add Folder…") { post(.addFolder) }.keyboardShortcut("o", modifiers: [.command, .shift])

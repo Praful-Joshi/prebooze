@@ -10,6 +10,11 @@ let package = Package(
     products: [
         .executable(name: "Pregame", targets: ["PregameApp"]),
     ],
+    dependencies: [
+        // Sparkle (MIT): in-app updates from an EdDSA-signed appcast. Pinned to
+        // an exact version; scripts/build-app.sh embeds and signs the framework.
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
+    ],
     targets: [
         // Queen Mary DSP (GPL-2.0+), vendored from Mixxx 2.5, plus a C shim.
         .target(
@@ -82,7 +87,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "PregameApp",
-            dependencies: ["PregameCore"],
+            dependencies: ["PregameCore", .product(name: "Sparkle", package: "Sparkle")],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(
