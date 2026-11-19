@@ -27,7 +27,7 @@ public struct UserPreset: Codable, Identifiable, Equatable, Sendable {
 }
 
 /// User presets, shared by every project:
-/// ~/Library/Application Support/Harmonizer/Presets.json
+/// Application Support/Pregame/Presets.json
 public final class PresetStore: @unchecked Sendable {
     public static let shared = PresetStore()
     public static let changed = Notification.Name("PregamePresetsChanged")

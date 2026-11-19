@@ -46,14 +46,4 @@ final class SigningTests: XCTestCase {
         let keys = files.split(separator: "\n").filter { keyExtensions.contains(($0 as NSString).pathExtension.lowercased()) }
         XCTAssertEqual(keys, [])
     }
-
-    /// Hardened runtime library validation only accepts libraries from the same
-    /// team, and a self-signed certificate has no team, so the app may load its
-    /// own bundled libraries. That exception is the only entitlement until the
-    /// sandbox lands.
-    func testTheAppMayLoadItsBundledLibraries() throws {
-        let data = try Data(contentsOf: Self.root.appendingPathComponent("scripts/Pregame.entitlements"))
-        let entitlements = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Bool])
-        XCTAssertEqual(entitlements, ["com.apple.security.cs.disable-library-validation": true])
-    }
 }

@@ -2,7 +2,7 @@ import AVFoundation
 import Foundation
 
 /// Separated stems on disk, by the file's content hash:
-/// ~/Library/Application Support/Harmonizer/Stems/<hash>/{drums,bass,vocals}.m4a
+/// Application Support/Pregame/Stems/<hash>/{drums,bass,vocals}.m4a
 /// (AAC, 44.1 kHz). Melody isn't stored: it is the track minus the other three,
 /// so the four always add up to the original exactly. The least recently used
 /// tracks are removed when the cache grows past its cap.

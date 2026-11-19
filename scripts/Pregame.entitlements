@@ -2,6 +2,27 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- The App Sandbox (docs/adr/0003-app-sandbox-from-v1.md). The app reaches
+	     only its container and what the user picks: folders and files to add,
+	     where exports go, and Mixes. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Read-write, because "Write Overrides to File Tags" writes into the Tracks' files. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<!-- Each Track keeps a security-scoped bookmark, so its folder stays
+	     reachable after a relaunch without asking again. -->
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+	<!-- Read-only, and only these: the data and settings from before the
+	     sandbox, copied into the container once at launch (DataFolders,
+	     LegacyDefaults). Paths are relative to the user's home. -->
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
+	<array>
+		<string>/Library/Application Support/Harmonizer/</string>
+		<string>/Library/Preferences/com.prafuljoshi.pregame.plist</string>
+		<string>/Library/Preferences/com.prafuljoshi.harmonizer.plist</string>
+	</array>
 	<!-- The hardened runtime only loads libraries signed by the same team, and a
 	     self-signed certificate has no team, so the app couldn't load its bundled
 	     TagLib and ONNX Runtime without this. See docs/signing.md. -->
