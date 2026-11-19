@@ -8,8 +8,10 @@ struct PregameApp: App {
     @ObservedObject private var outputs: AudioOutputs
 
     init() {
-        // Before anything reads a setting, so the old app's settings come through.
+        // Before anything reads a setting or opens a cache, so the settings and
+        // data from before the sandbox come through (ADR-0003).
         LegacyDefaults.migrateIfNeeded()
+        DataFolders.copyLegacyDataIfNeeded()
         // Launch into a new, empty Mix rather than the system Open panel.
         // File > Open and Open Recent still reach saved Mixes.
         UserDefaults.standard.register(defaults: ["NSShowAppCentricOpenPanelInsteadOfUntitledFile": false])

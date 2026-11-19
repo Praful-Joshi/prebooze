@@ -128,3 +128,9 @@ jobs:
           for code in build/Pregame.app build/Pregame.app/Contents/Frameworks/*.dylib; do
             codesign --display --verbose "$code" 2>&1 | grep -Eq 'flags=0x[0-9a-f]+\([^)]*runtime' || { echo "$code: no hardened runtime"; exit 1; }
           done
+
+      - name: Sandboxed (ADR-0003)
+        run: |
+          ENTITLEMENTS="$(codesign --display --entitlements - --xml build/Pregame.app 2>/dev/null | tr -d '\n\t ')"
+          [[ "$ENTITLEMENTS" == *'<key>com.apple.security.app-sandbox</key><true/>'* ]] \
+            || { echo "build/Pregame.app is not sandboxed"; exit 1; }

@@ -27,4 +27,4 @@ cp out/htdemucs.onnx out/htdemucs.onnx.data ../../Models/
 | ONNX Runtime, CPU only | ~6.5× realtime |
 | demucs.cpp | ~1× realtime |
 
-The first Core ML load compiles for ~40 s; after that it's cached in `~/Library/Caches/Harmonizer/CoreML`.
+The first Core ML load compiles for ~40 s; after that it's cached in `~/Library/Containers/com.prafuljoshi.pregame/Data/Library/Caches/Pregame/CoreML`.

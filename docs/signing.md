@@ -55,4 +55,6 @@ CI checks the requirement with a throwaway certificate on every push (the `signe
 
 ## Hardened runtime and bundled libraries
 
-The app, `libtag.2.dylib` and `libonnxruntime.1.dylib` are all signed with the hardened runtime. The hardened runtime's library validation only loads libraries signed by the app's own team, and a self-signed certificate has no team. So the app carries one entitlement, `com.apple.security.cs.disable-library-validation` (`scripts/Pregame.entitlements`), which lets it load its bundled libraries. The App Sandbox entitlements will join it ([ADR-0003](adr/0003-app-sandbox-from-v1.md)).
+The app, `libtag.2.dylib` and `libonnxruntime.1.dylib` are all signed with the hardened runtime. The hardened runtime's library validation only loads libraries signed by the app's own team, and a self-signed certificate has no team. So among its entitlements (`scripts/Pregame.entitlements`) the app carries `com.apple.security.cs.disable-library-validation`, which lets it load its bundled libraries. The rest are the App Sandbox's ([ADR-0003](adr/0003-app-sandbox-from-v1.md)): the sandbox itself, read-write access to files the user picks, app-scoped bookmarks, and read-only access to the data and settings from before the sandbox, which are copied into the container once at launch.
+
+The sandbox keeps the app's data in its container, `~/Library/Containers/com.prafuljoshi.pregame/Data/Library/Application Support/Pregame`, keyed to the signing identity. That's one more reason every build must use the same certificate.

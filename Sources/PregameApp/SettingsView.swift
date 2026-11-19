@@ -90,9 +90,24 @@ struct StorageSettings: View {
                     Button("Clear") { try? FileManager.default.removeItem(at: StemSeparator.coreMLCacheURL); reload() }
                         .help("Recompiled on the next separation (~40 s)")
                 }
-                Button("Show in Finder") {
-                    NSWorkspace.shared.activateFileViewerSelecting([StemCache.shared.directory.deletingLastPathComponent()])
+            }
+            Section {
+                LabeledContent("Location") {
+                    Text(DataFolders.displayPath(DataFolders.applicationSupport))
+                        .foregroundStyle(.secondary).textSelection(.enabled)
+                        .lineLimit(2).truncationMode(.middle)
                 }
+                HStack {
+                    Spacer()
+                    Button("Show in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([DataFolders.applicationSupport])
+                    }
+                }
+            } header: {
+                Text("Where it's kept")
+            } footer: {
+                Text("Inside Pregame's own container, which the App Sandbox keeps it to.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

@@ -2,7 +2,7 @@ import CryptoKit
 import Foundation
 
 /// Shared, content-addressed analysis cache in
-/// ~/Library/Application Support/Harmonizer/Analysis/<sha256>.{json,wave}.
+/// Application Support/Pregame/Analysis/<sha256>.{json,wave}.
 /// A track analysed once is instant in every project, even after a move/rename.
 public final class AnalysisCache: @unchecked Sendable {
     public static let shared = AnalysisCache()
