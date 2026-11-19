@@ -47,7 +47,7 @@ Until #16 lands, the old harmonic colours map through `Palette.legacyMatch(_:)`:
 | `fade` | easeInOut 0.2 s | Content swaps, loading states |
 | `breathe` | easeInOut 0.7 s, repeating | Now-playing and analysing pulses |
 
-With Reduce Motion on, every spring and glide becomes a 0.15 s fade, and `breathe` returns nil (no loop).
+With Reduce Motion on, every spring and glide becomes a 0.15 s fade, and `breathe` returns nil (no loop). The timeline's scroll is an AppKit animation (`glideAppKit`); it can't fade, so with Reduce Motion it jumps.
 
 ## Screen decisions (for the issues that build them)
 
