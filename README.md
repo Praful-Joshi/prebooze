@@ -189,7 +189,7 @@ When a track's structure confidence is under 0.5, the structure modes fall back 
 
 **Open the app**
 
-1. Open **Pregame** from Applications. Each mix is a `.hmix` project with autosave and full undo.
+1. Open **Pregame** from Applications. If you had installed it under its old name, delete `Harmonizer.app` so Mix files open in Pregame; your settings, analysis and stems carry over. Each mix is a `.hmix` project with autosave and full undo.
 
 **Add tracks**
 

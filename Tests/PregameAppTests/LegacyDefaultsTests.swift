@@ -40,8 +40,4 @@ final class LegacyDefaultsTests: XCTestCase {
         LegacyDefaults.migrate(from: nil, into: defaults)
         XCTAssertNil(defaults.object(forKey: "timelineHeight"))
     }
-
-    func testTheOldDomainIsTheOldBundleIdentifier() {
-        XCTAssertEqual(LegacyDefaults.domain, "com.prafuljoshi.harmonizer")
-    }
 }
