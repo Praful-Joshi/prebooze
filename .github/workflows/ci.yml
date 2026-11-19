@@ -64,3 +64,59 @@ jobs:
 
       - name: Test
         run: swift test --skip-build
+
+  signed-app:
+    name: Signed app keeps its identity
+    # build-app.sh signs with one self-signed identity, so a rebuilt app keeps the
+    # folder access macOS granted the last one (docs/signing.md). Build twice with
+    # a throwaway identity and check the second build satisfies the first's
+    # designated requirement, which is what macOS checks.
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Native libraries (Homebrew)
+        run: brew install taglib rubberband libsamplerate lame mpg123
+
+      - name: Cache ONNX Runtime
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: Vendor/onnxruntime/lib/libonnxruntime.1.dylib
+          key: onnxruntime-${{ hashFiles('scripts/fetch-vendor.sh') }}
+
+      - name: Fetch and verify vendored binaries
+        run: scripts/fetch-vendor.sh
+
+      - name: Throwaway signing identity
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          PASS="$(openssl rand -hex 16)"
+          security create-keychain -p "$PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$PASS" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          PREGAME_KEYCHAIN="$KEYCHAIN" PREGAME_SIGNING_PASSPHRASE="$PASS" \
+            scripts/make-signing-identity.sh "$RUNNER_TEMP/backup.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$PASS" "$KEYCHAIN" > /dev/null
+
+      - name: Build twice
+        run: |
+          scripts/build-app.sh
+          codesign --display --requirements - build/Pregame.app 2>/dev/null | sed -n 's/^designated => //p' > "$RUNNER_TEMP/first"
+          scripts/build-app.sh
+          codesign --display --requirements - build/Pregame.app 2>/dev/null | sed -n 's/^designated => //p' > "$RUNNER_TEMP/second"
+
+      - name: Same designated requirement, hardened runtime
+        run: |
+          cat "$RUNNER_TEMP/first"
+          grep -q 'certificate leaf' "$RUNNER_TEMP/first"
+          diff "$RUNNER_TEMP/first" "$RUNNER_TEMP/second"
+          codesign --verify --strict -R="$(cat "$RUNNER_TEMP/first")" build/Pregame.app
+          for code in build/Pregame.app build/Pregame.app/Contents/Frameworks/*.dylib; do
+            codesign --display --verbose "$code" 2>&1 | grep -q 'flags=0x10000(runtime)' || { echo "$code: no hardened runtime"; exit 1; }
+          done

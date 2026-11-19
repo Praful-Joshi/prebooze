@@ -25,8 +25,11 @@ brew install taglib rubberband libsamplerate lame mpg123
 scripts/fetch-vendor.sh          # downloads ONNX Runtime and verifies its checksum
 swift build                      # debug build
 swift test                       # the test suite: a few minutes, no external tools needed
+scripts/make-signing-identity.sh ~/Documents/pregame-signing.p12   # once: the signing certificate and a backup
 scripts/build-app.sh --install   # release build of Pregame.app into /Applications
 ```
+
+`build-app.sh` signs the app with one self-signed certificate, so macOS keeps the folder access you grant it across rebuilds. Create the certificate once, and keep its backup out of the repo; see [docs/signing.md](docs/signing.md).
 
 `build-app.sh` also bundles the Demucs stem model (`Models/htdemucs.onnx.data`, 161 MB), which isn't in the repo. Export it as described in [`scripts/stems/README.md`](scripts/stems/README.md); everything except stem separation works without it.
 
@@ -228,7 +231,7 @@ swift test                      # the suite: synthetic audio generated in Swift,
 swift test --filter HarmonizeTests             # one suite while you work
 scripts/test-real-music.sh ~/Music/party       # the private real-music suites (release build; see below)
 swift scripts/icon/make-icon.swift icon.png   # regenerate the app icon artwork (then scripts/AppIcon.icns)
-scripts/build-app.sh --install  # release .app → /Applications
+scripts/build-app.sh --install  # release .app → /Applications, signed (docs/signing.md)
 ```
 
 **Requirements:**
