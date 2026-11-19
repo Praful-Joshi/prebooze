@@ -5,6 +5,21 @@
 set -euo pipefail
 cd "${0:A:h:h}"
 
+# Every build is signed with the same self-signed identity and the hardened
+# runtime, so macOS sees one app across rebuilds and keeps the folder access it
+# was granted (docs/signing.md). Check for it before spending minutes building.
+IDENTITY="${PREGAME_SIGNING_IDENTITY:-Pregame Self-Signed}"
+# Lines read `1) <SHA-1> "name"`; a trusted identity is listed twice, so count hashes.
+MATCHES="$(security find-identity -p codesigning | grep -F "\"$IDENTITY\"" | awk '{print $2}' | sort -u | grep -c . || true)"
+if [[ "$MATCHES" == 0 ]]; then
+  echo "error: no code-signing identity \"$IDENTITY\" in your keychains." >&2
+  echo "Create it once with scripts/make-signing-identity.sh, or restore your backup; see docs/signing.md." >&2
+  exit 1
+elif [[ "$MATCHES" != 1 ]]; then
+  echo "error: $MATCHES code-signing identities are named \"$IDENTITY\"; keep only the one in your backup (docs/signing.md)." >&2
+  exit 1
+fi
+
 swift build -c release --product Pregame
 BIN="$(swift build -c release --show-bin-path)"
 APP="build/Pregame.app"
@@ -30,13 +45,21 @@ install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/Mac
 # ONNX Runtime (stems) and the Demucs model (exported to ONNX, see README).
 cp Vendor/onnxruntime/lib/libonnxruntime.1.dylib "$APP/Contents/Frameworks/libonnxruntime.1.dylib"
 chmod u+w "$APP/Contents/Frameworks/libonnxruntime.1.dylib"
-mkdir -p "$APP/Contents/Resources/Models"
-cp Models/htdemucs.onnx Models/htdemucs.onnx.data "$APP/Contents/Resources/Models/"
+if [[ -f Models/htdemucs.onnx.data ]]; then
+  mkdir -p "$APP/Contents/Resources/Models"
+  cp Models/htdemucs.onnx Models/htdemucs.onnx.data "$APP/Contents/Resources/Models/"
+else
+  echo "warning: Models/htdemucs.onnx.data is missing, so this build can't separate stems (scripts/stems/README.md)." >&2
+fi
 
-codesign --force --sign - "$APP/Contents/Frameworks/libonnxruntime.1.dylib"
-codesign --force --sign - "$APP/Contents/Frameworks/libtag.2.dylib"
-codesign --force --sign - "$APP"
+# Libraries first, then the app, whose signature seals everything inside it.
+SIGN=(codesign --force --sign "$IDENTITY" --options runtime --timestamp=none)
+"${SIGN[@]}" "$APP/Contents/Frameworks/libonnxruntime.1.dylib"
+"${SIGN[@]}" "$APP/Contents/Frameworks/libtag.2.dylib"
+"${SIGN[@]}" --entitlements scripts/Pregame.entitlements "$APP"
+codesign --verify --strict --deep "$APP"
 echo "Built $APP"
+codesign --display --requirements - "$APP" 2>/dev/null   # same on every build: see docs/signing.md
 
 if [[ "${1:-}" == "--install" ]]; then
   rm -rf /Applications/Pregame.app
