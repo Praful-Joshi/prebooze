@@ -3,7 +3,8 @@ import Foundation
 /// Shortest Hamiltonian path over an asymmetric cost matrix.
 /// - Held-Karp (exact) for small sets.
 /// - Iterated local search (greedy starts + 2-opt + or-opt + double-bridge
-///   kicks) for larger sets; deterministic for a seed unless the time budget hits.
+///   kicks) for larger sets. It runs a fixed number of rounds, so it is
+///   deterministic for a seed unless the time budget cuts it short.
 public struct SolveResult: Sendable {
     public let order: [Int]
     public let cost: Double
@@ -14,8 +15,12 @@ public struct SolveResult: Sendable {
 
 public enum SolverError: Error { case sameFirstAndLast }
 
+/// Local-search rounds when the caller doesn't choose.
+public let defaultSolverRounds = 1000
+
 public func solve(_ c: CostMatrix, first: Int? = nil, last: Int? = nil,
-                  exactMax: Int = 15, timeBudget: Double = 10, seed: UInt64 = 42) throws -> SolveResult {
+                  exactMax: Int = 15, timeBudget: Double = 10, rounds: Int = defaultSolverRounds,
+                  seed: UInt64 = 42) throws -> SolveResult {
     let n = c.n
     if let first, first == last { throw SolverError.sameFirstAndLast }
     if n <= 2 {
@@ -30,7 +35,7 @@ public func solve(_ c: CostMatrix, first: Int? = nil, last: Int? = nil,
         let order = heldKarp(c, first: first, last: last)
         return SolveResult(order: order, cost: c.pathCost(order), method: "exact")
     }
-    return localSearch(c, first: first, last: last, timeBudget: timeBudget, seed: seed)
+    return localSearch(c, first: first, last: last, timeBudget: timeBudget, seed: seed, rounds: rounds)
 }
 
 func heldKarp(_ c: CostMatrix, first: Int?, last: Int?) -> [Int] {
@@ -90,7 +95,7 @@ struct SeededRandom: RandomNumberGenerator {
 }
 
 func localSearch(_ input: CostMatrix, first: Int?, last: Int?, timeBudget: Double,
-                 seed: UInt64, rounds: Int = 1000) -> SolveResult {
+                 seed: UInt64, rounds: Int) -> SolveResult {
     var c = input
     for k in 0..<c.values.count where !c.values[k].isFinite { c.values[k] = 1e9 }
     let n = c.n
@@ -102,7 +107,7 @@ func localSearch(_ input: CostMatrix, first: Int?, last: Int?, timeBudget: Doubl
     var bestCost = Double.infinity
     var hitLimit = false
     var done = 0
-    for r in 0..<rounds {
+    for r in 0..<max(1, rounds) {
         if Date() > deadline { hitLimit = true; break }
         var order = (best.isEmpty || r % 3 == 0)
             ? greedy(c, first: first, last: last, rng: &rng)

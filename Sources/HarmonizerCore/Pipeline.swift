@@ -90,7 +90,8 @@ extension MixProject {
         } else {
             result = try solve(m, first: first, last: last,
                                exactMax: HarmonicConfig.shared.defaults.exact_max_tracks,
-                               timeBudget: settings.timeBudget, seed: settings.seed)
+                               timeBudget: settings.timeBudget,
+                               rounds: settings.rounds ?? defaultSolverRounds, seed: settings.seed)
         }
         result = SolveResult(order: result.order, cost: result.cost + withinChains, method: result.method,
                              hitTimeLimit: result.hitTimeLimit, rounds: result.rounds)
