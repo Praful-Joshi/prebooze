@@ -43,7 +43,7 @@ func heldKarp(_ c: CostMatrix, first: Int?, last: Int?) -> [Int] {
     let full = (1 << n) - 1
     var dp = [Double](repeating: .infinity, count: (1 << n) * n)
     var parent = [Int8](repeating: -1, count: (1 << n) * n)
-    let starts = first.map { [$0] } ?? (0..<n).filter { $0 != last }
+    let starts: [Int] = first.map { [$0] } ?? (0..<n).filter { $0 != last }
     for s in starts { dp[(1 << s) * n + s] = 0 }
     for mask in 1...full {
         let base = mask * n
