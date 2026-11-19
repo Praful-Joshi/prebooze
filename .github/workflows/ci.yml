@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      # Third-party actions are pinned to commit SHAs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Native libraries (Homebrew)
+        run: brew install taglib rubberband libsamplerate lame mpg123
+
+      - name: Cache ONNX Runtime
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: Vendor/onnxruntime/lib/libonnxruntime.1.dylib
+          key: onnxruntime-${{ hashFiles('scripts/fetch-vendor.sh') }}
+
+      - name: Fetch and verify vendored binaries
+        run: scripts/fetch-vendor.sh
+
+      - name: Build the app
+        run: swift build --product Harmonizer
+
+      - name: Build the tests
+        run: swift build --build-tests
+
+      - name: Test
+        run: swift test --skip-build

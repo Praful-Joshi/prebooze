@@ -1,10 +1,42 @@
 # Prebooze
 
-A native macOS app for building DJ mixes, entirely free and local. It analyses tracks (key, BPM, beat grid), orders them for harmonic flow, and in later milestones edits and renders transitions.
+**Party-ready Mixes from your own music, on your own Mac. Free and open source.**
 
-> The code, build products and data folders are still named Harmonizer (`Sources/HarmonizerCore`, `Harmonizer.app`, `HARMONIZER_*` variables) until the rename. Those names are kept exactly as they are below.
+Prebooze is for the **Mix Host**: someone throwing a house party who wants the music to flow — no dead air, no jarring jumps — without learning to DJ. Add a folder of songs you own, press **Harmonize**, and Prebooze orders them for key and tempo, then blends each one into the next on the beat. Listen, tweak any Transition by ear, and export the whole Mix as one file to play from a phone, a USB stick or a speaker.
 
-**Status:** M1–M5 are complete: foundation, transition editor, timeline and export, song structure (cues, loops, key shift), and stems with extra effects and saved presets.
+- **Local and private:** no account, no backend, no streaming service. Your music never leaves your Mac.
+- **Free:** GPL-3.0, with no paid export or subscription.
+- **Native:** a SwiftUI app for macOS.
+
+> **Status:** early. The engine (analysis, Harmonize, the Transition editor, stems and export) is working; v1 work is tracked in [issue #2](https://github.com/Praful-Joshi/prebooze/issues/2). The code, build products and data folders are still named Harmonizer (`Sources/HarmonizerCore`, `Harmonizer.app`, `HARMONIZER_*` variables) until the rename, and those names are kept exactly as they are below.
+
+## System requirements
+
+- A Mac with **Apple Silicon** (M1 or later). Intel Macs are not supported.
+- **macOS 14 Sonoma or later** for v1. Until that lands ([#5](https://github.com/Praful-Joshi/prebooze/issues/5)), builds from `main` still need macOS 26.
+- Music files you own: MP3, M4A/AAC, FLAC, WAV or AIFF. Streaming services can't be used.
+
+## Building from source
+
+You need Xcode 26 or later (Swift 6) and [Homebrew](https://brew.sh).
+
+```sh
+brew install taglib rubberband libsamplerate lame mpg123
+scripts/fetch-vendor.sh          # downloads ONNX Runtime and verifies its checksum
+swift build                      # debug build
+swift test                       # the test suite: a few minutes, no external tools needed
+scripts/build-app.sh --install   # release build of Harmonizer.app into /Applications
+```
+
+`build-app.sh` also bundles the Demucs stem model (`Models/htdemucs.onnx.data`, 161 MB), which isn't in the repo. Export it as described in [`scripts/stems/README.md`](scripts/stems/README.md); everything except stem separation works without it.
+
+Every push and pull request is built and tested by [GitHub Actions](.github/workflows/ci.yml). More developer detail is under [Developing](#developing).
+
+## Licence
+
+Prebooze is free software under the [GNU General Public License v3.0](LICENSE). It builds on Rubber Band (GPL), Queen Mary DSP (GPL), TagLib (LGPL), ONNX Runtime (MIT), Demucs (MIT) and others; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+# How it works
 
 ## Transitions, timeline and export
 
@@ -192,18 +224,27 @@ When a track's structure confidence is under 0.5, the structure modes fall back 
 
 ```sh
 swift build                     # debug build
-swift test                      # unit + engine parity tests (no external tools: test audio is generated in Swift)
-HARMONIZER_PARITY=1 swift test -c release --filter Parity   # vs Mixxx, needs the music files
-HARMONIZER_EXPORT=~/Music/set HARMONIZER_EXPORT_OUT=/tmp/x swift test -c release --filter RealExport
-HARMONIZER_STRUCTURE=~/Music/set swift test -c release --filter RealStructure   # print detected sections
+swift test                      # the suite: synthetic audio generated in Swift, no external tools, a few minutes in debug
+swift test --filter HarmonizeTests             # one suite while you work
+scripts/test-real-music.sh ~/Music/set         # the private real-music suites (release build; see below)
 swift scripts/icon/make-icon.swift icon.png   # regenerate the app icon artwork (then scripts/AppIcon.icns)
 scripts/build-app.sh --install  # release .app → /Applications
 ```
 
 **Requirements:**
 
-- Xcode 27 / Swift 6
+- Xcode 26 or later / Swift 6 (CI uses the `macos-26` runner's default Xcode)
 - Homebrew `taglib` (bundled into the .app), `rubberband`, `libsamplerate`, `lame`, `mpg123` (linked statically)
+- ONNX Runtime 1.31.0 in `Vendor/onnxruntime/lib`, fetched and checksum-verified by `scripts/fetch-vendor.sh`
+
+**Tests** drive public behaviour (mostly through `MixProject`, plus the playback engine) and assert on what a Mix Host would notice: which Tracks play and in what order, Transition labels, lengths, and the audio frames produced. They are deterministic (seeded, with a fixed amount of solver work) and run offline. The test audio is generated in Swift, so no real music is committed.
+
+**Real-music suites** stay out of the default run because they need your own music files. `scripts/test-real-music.sh <folder> [output folder]` runs them in a release build:
+
+- analysis parity with the keys and BPMs Mixxx stored (`AnalysisParityTests`, the files listed in `Tests/HarmonizerCoreTests/Fixtures/mixxx_analysis.json`)
+- a full export of the folder with a click check at every join (`RealExportTests`)
+- detected song structure, printed for eyeballing (`RealStructureTests`)
+- optional, when their variables are set: stems against the reference (`HARMONIZER_STEM_REF`), real stems in a Transition (`HARMONIZER_STEM_PAIR`), separation and key-shift timing (`HARMONIZER_STEM_FILE`, `HARMONIZER_SHIFT_FILE`)
 
 **Layout:**
 
@@ -218,7 +259,7 @@ scripts/build-app.sh --install  # release .app → /Applications
 | `Sources/HarmonizerCore/MixPlan.swift` | Mix-on modes and transition placement |
 | `Sources/HarmonizerCore/KeyShift.swift` | Fix-key suggestion |
 | `Sources/HarmonizerCore/Stems.swift`, `StemCache.swift` | Demucs separation (STFT, segments, ONNX), AAC stem cache |
-| `Sources/COnnx`, `Vendor/onnxruntime`, `Models/` | ONNX Runtime 1.31 (MIT) C shim + library, exported Demucs model (MIT) |
+| `Sources/COnnx`, `Vendor/onnxruntime`, `Models/` | ONNX Runtime 1.31 (MIT) C shim + headers (the library comes from `scripts/fetch-vendor.sh`), exported Demucs model (MIT) |
 | `scripts/stems/` | How the model was exported, reference implementation, benchmarks |
 | `Sources/HarmonizerCore/Transitions.swift` | Curves, specs, presets, tempo glide |
 | `Sources/HarmonizerCore/Export.swift` | WAV/MP3 export (the writer also does FLAC), tracklist, cue sheet |
@@ -226,7 +267,7 @@ scripts/build-app.sh --install  # release .app → /Applications
 | `Sources/HarmonizerApp` | SwiftUI app |
 | `Sources/QMDSP` | Queen Mary DSP from Mixxx 2.5 (GPL) + C shim |
 | `Sources/CTagLib` | TagLib bridge |
-| `Tests/HarmonizerCoreTests/Fixtures` | Parity fixtures captured from the retired Python engine and from Mixxx |
+| `Tests/HarmonizerCoreTests/Fixtures` | Keys and BPMs Mixxx stored for the real-music parity suite |
 | `Tests/HarmonizerCoreTests/Support/SyntheticAudio.swift` | Test audio generator: click tracks, chords in a key, energy ramps, section changes, silence; writes WAV/MP3/FLAC (plus M4A, AIFF) with tags |
 
-**Licences:** QM DSP and Rubber Band are GPL-2.0+, and TagLib and LAME are LGPL. ONNX Runtime and Demucs are MIT. That's fine for personal use; it only matters if you ever wanted to distribute the app closed-source.
+**Licences:** the app is GPL-3.0 ([LICENSE](LICENSE)). QM DSP and Rubber Band are GPL-2.0+, TagLib, LAME and mpg123 are LGPL, ONNX Runtime and Demucs are MIT; [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists them all.

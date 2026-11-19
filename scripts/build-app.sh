@@ -16,6 +16,9 @@ cp "$BIN/Harmonizer" "$APP/Contents/MacOS/Harmonizer"
 cp -R "$BIN/Harmonizer_HarmonizerCore.bundle" "$APP/Contents/Resources/"
 cp scripts/Info.plist "$APP/Contents/Info.plist"
 cp scripts/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"   # from scripts/icon/make-icon.swift
+cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
+cp Vendor/onnxruntime/LICENSE "$APP/Contents/Resources/ONNXRUNTIME_LICENSE"
+cp Sources/QMDSP/COPYING "$APP/Contents/Resources/QMDSP_COPYING"
 
 # Bundle TagLib so the app doesn't depend on Homebrew at runtime.
 cp "$TAGLIB" "$APP/Contents/Frameworks/libtag.2.dylib"
