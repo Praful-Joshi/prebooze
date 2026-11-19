@@ -1,6 +1,8 @@
-# Harmonizer
+# Prebooze
 
 A native macOS app for building DJ mixes, entirely free and local. It analyses tracks (key, BPM, beat grid), orders them for harmonic flow, and in later milestones edits and renders transitions.
+
+> The code, build products and data folders are still named Harmonizer (`Sources/HarmonizerCore`, `Harmonizer.app`, `HARMONIZER_*` variables) until the rename. Those names are kept exactly as they are below.
 
 **Status:** M1–M5 are complete: foundation, transition editor, timeline and export, song structure (cues, loops, key shift), and stems with extra effects and saved presets.
 
@@ -104,14 +106,14 @@ Corrections, bar 1 and cues are stored with the file's analysis, so every projec
 
 When a track's structure confidence is under 0.5, the structure modes fall back to Phrase and show a warning.
 
-**Hot cues:** 8 per track. Set them in Get Info; they show as orange flags everywhere.
+**Hot cues:** 8 per track. Set them in Get Info; they show as yellow flags everywhere.
 
 **Loops:** in the editor, **Outro loop** (outgoing track) and **Intro loop** (incoming track) are 1–16 bars played 2–9×. The outro loop repeats the start of the outro, and the intro loop the first bars. The mix gets longer to fit.
 
 **Key shift:**
 
 - ±6 semitones per track, via Rubber Band pitch shifting. It takes about 4 s per track the first time it plays.
-- Set it in Get Info or with right-click › Key Shift. The shifted key is used everywhere: the Key column (purple), labels, Harmonize and exports.
+- Set it in Get Info or with right-click › Key Shift. The shifted key is used everywhere: the Key column (with a `↕ +2` suffix), labels, Harmonize and exports.
 - On 🟦/🟥 transitions, **Fix key** in the editor header applies the smallest shift that turns the transition 🟩/🟨 without making the shifted track's other transition worse.
 - Harmonize never shifts keys itself.
 
@@ -155,14 +157,14 @@ When a track's structure confidence is under 0.5, the structure modes fall back 
 
 **Open the app**
 
-1. Open **Harmonizer** from Applications. Each mix is a `.hmix` project with autosave and full undo.
+1. Open **Prebooze** from Applications (installed as `Harmonizer.app` for now). Each mix is a `.hmix` project with autosave and full undo.
 
 **Add tracks**
 
 2. Use **File › Add Folder…** (⇧⌘O), *Add Folder Including Subfolders…* or *Add Files…*. Key, BPM and beat grid are analysed in the background. Results are cached in `~/Library/Application Support/Harmonizer/Analysis/`, keyed by file content, so a track is only analysed once across all projects.
 3. **Playlist (sidebar):**
    - **Rows:** each row shows the title, artist, key and BPM.
-   - **Pills:** the key pill has a Camelot-wheel colour edge. A pill turns orange when overridden, purple when key-shifted, and red when missing. Click a pill to override the value (any notation), key-shift the song or revert.
+   - **Pills:** the key pill has a Camelot-wheel colour edge. A pill turns orange when overridden and red when missing; a key shift adds a `↕ +2` suffix. Click a pill to override the value (any notation), key-shift the song or revert.
    - **Transitions** sit between the songs: their label and length. Click one to edit it; its lock appears on hover.
    - **Reordering:** drag rows by the handle that replaces the number on hover. Locked pairs and chains move together.
    - **Leaving songs out:** press **⌫**, or drag the song into **Not in mix** at the bottom. **⌘⌫** removes it from the project.
