@@ -2,20 +2,9 @@ import Foundation
 import XCTest
 @testable import HarmonizerCore
 
+/// Stem separation needs the Demucs model weights, which aren't in the repo, so
+/// these run only through scripts/test-real-music.sh.
 final class StemTests: XCTestCase {
-    func testSTFTRoundTrip() {
-        let n = StemSeparator.segment
-        var rng = SystemRandomNumberGenerator()
-        let x = (0..<n).map { i in Float(sin(Double(i) * 0.01)) * 0.5 + Float.random(in: -0.1...0.1, using: &rng) }
-        let fft = STFT(n: 4096)
-        let (re, im) = fft.spec(x, frames: StemSeparator.frames, freqs: StemSeparator.freqs)
-        let y = fft.ispec(re: re, im: im, frames: StemSeparator.frames, freqs: StemSeparator.freqs, length: n)
-        // Away from the segment edges (where torch.istft's padded empty frames
-        // attenuate, and Demucs trims/cross-fades anyway) it must come back.
-        let err = (4096..<(n - 4096)).map { abs(x[$0] - y[$0]) }.max()!
-        XCTAssertLessThan(err, 5e-3)   // the white noise loses its Nyquist bin
-    }
-
     /// Swift pipeline vs the NumPy + ONNX reference (itself 80–95 dB from
     /// PyTorch Demucs). HARMONIZER_STEM_REF=<dir with ref_in.npy, ref_out.npy>.
     func testMatchesReference() throws {

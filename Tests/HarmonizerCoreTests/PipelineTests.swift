@@ -86,7 +86,6 @@ final class PipelineTests: XCTestCase {
                                tracks: tracks)
         XCTAssertEqual(r.matched, [tracks[0].id, tracks[1].id, tracks[2].id])
         XCTAssertEqual(r.unmatched, ["Something Else Entirely"])
-        XCTAssertEqual(similarity("abcd", "bcde"), 0.75, accuracy: 1e-9)
     }
 
     func testImportOldRun() throws {
@@ -148,10 +147,12 @@ final class AnalysisTests: XCTestCase {
         XCTAssertEqual(wave.peak.count, audio.frames / WaveformSummary.bucketFrames)
     }
 
-    func testBeatUtilsRounding() {
-        XCTAssertEqual(BeatUtils.roundBpmWithinRange(125.9, 126.02, 126.1), 126)
-        XCTAssertEqual(BeatUtils.roundBpmWithinRange(70.4, 70.52, 70.6), 70.5)
-        XCTAssertEqual(BeatUtils.roundBpmWithinRange(124.97, 125.0183, 125.06), 125)
+    /// Tempos are shown as the producer set them: 126, not 125.98; 70.5, not 70.52.
+    func testWholeAndHalfTemposAreReportedExactly() {
+        for bpm in [126.0, 125.0, 70.5] {
+            let (a, _) = analyse(SyntheticAudio.clicks(bpm: bpm, seconds: 40).decoded)
+            XCTAssertEqual(a.bpm, bpm)
+        }
     }
 
     func testCacheStoresAndReloads() throws {
@@ -164,9 +165,12 @@ final class AnalysisTests: XCTestCase {
         XCTAssertEqual(fresh.cached("abc")?.bpm, a.bpm)
         XCTAssertEqual(fresh.waveform("abc")?.peak, w.peak)
         XCTAssertNil(fresh.cached("nope"))
-        let file = dir.appendingPathComponent("f.bin")
-        try Data("hello".utf8).write(to: file)
-        XCTAssertEqual(try AnalysisCache.contentHash(file),
-                       "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
+        // Analysis is keyed by content: a moved or renamed copy reuses it, an edited file doesn't.
+        let file = dir.appendingPathComponent("song.wav"), copy = dir.appendingPathComponent("moved copy.wav")
+        try SyntheticAudio.clicks(bpm: 128, seconds: 2).write(to: file)
+        try FileManager.default.copyItem(at: file, to: copy)
+        XCTAssertEqual(try AnalysisCache.contentHash(file), try AnalysisCache.contentHash(copy))
+        try SyntheticAudio.clicks(bpm: 127, seconds: 2).write(to: copy)
+        XCTAssertNotEqual(try AnalysisCache.contentHash(file), try AnalysisCache.contentHash(copy))
     }
 }

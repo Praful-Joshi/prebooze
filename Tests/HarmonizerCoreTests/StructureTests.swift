@@ -6,7 +6,7 @@ final class StructureTests: XCTestCase {
     /// Per-bar levels from a list of (bars, bass dB, high dB) parts.
     func levels(_ parts: [(Int, Float, Float)], jitter: Float = 0.4) -> BeatFeatures {
         var f = BeatFeatures(bass: [], full: [], high: [])
-        var rng = SystemRandomNumberGenerator()
+        var rng = SeededRandom(seed: 3)
         for (count, bass, high) in parts {
             for _ in 0..<count {
                 let j = Float.random(in: -jitter...jitter, using: &rng)
@@ -51,6 +51,7 @@ final class StructureTests: XCTestCase {
         let sr = 22050.0, bpm = 125.0, beat = 60 / bpm * sr
         let beats = 4 * 64 + 1
         var y = [Float](repeating: 0, count: Int(0.25 * sr + Double(beats + 4) * beat))
+        var rng = SeededRandom(seed: 4)
         for b in 0..<beats {
             let s = Int(0.25 * sr + Double(b) * beat)
             for i in 0..<Int(0.08 * sr) {
@@ -59,7 +60,7 @@ final class StructureTests: XCTestCase {
             let bar = (b - 1) / 4
             if b >= 1, (bar / 8) % 2 == 1 {
                 for i in 0..<Int(beat) where s + i < y.count {
-                    y[s + i] += 0.2 * Float.random(in: -1...1)   // noise "hats" across the beat
+                    y[s + i] += 0.2 * Float.random(in: -1...1, using: &rng)   // noise "hats" across the beat
                 }
             }
         }

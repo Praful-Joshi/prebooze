@@ -73,7 +73,12 @@ let package = Package(
         .target(
             name: "HarmonizerCore",
             dependencies: ["QMDSP", "CTagLib", "CRubberBand", "CLame", "COnnx"],
-            resources: [.process("Resources")]
+            resources: [.process("Resources")],
+            // Optimised in debug builds too: the engine's per-sample loops (analysis,
+            // rendering) run 5–10× slower at -Onone, which made a plain `swift test`
+            // take about 6 minutes instead of 1. Remove this line locally if you
+            // need to step through the core in a debugger.
+            swiftSettings: [.unsafeFlags(["-O"], .when(configuration: .debug))]
         ),
         .executableTarget(
             name: "HarmonizerApp",
