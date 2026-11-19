@@ -15,7 +15,7 @@ public struct SolveResult: Sendable {
 
 public enum SolverError: Error { case sameFirstAndLast }
 
-/// Local-search rounds when the caller doesn't choose.
+/// Local-search rounds when the caller doesn't choose. At least one round always runs.
 public let defaultSolverRounds = 1000
 
 public func solve(_ c: CostMatrix, first: Int? = nil, last: Int? = nil,
@@ -100,7 +100,8 @@ func localSearch(_ input: CostMatrix, first: Int?, last: Int?, timeBudget: Doubl
     for k in 0..<c.values.count where !c.values[k].isFinite { c.values[k] = 1e9 }
     let n = c.n
     var rng = SeededRandom(seed: seed)
-    let deadline = Date().addingTimeInterval(timeBudget)
+    // An infinite budget means the round count alone bounds the work.
+    let deadline = timeBudget.isFinite ? Date().addingTimeInterval(timeBudget) : .distantFuture
     let lo = first == nil ? 0 : 1
     let hi = last == nil ? n - 1 : n - 2
     var best: [Int] = []

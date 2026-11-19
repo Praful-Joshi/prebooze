@@ -2,7 +2,7 @@
 
 **Party-ready Mixes from your own music, on your own Mac. Free and open source.**
 
-Prebooze is for the **Mix Host**: someone throwing a house party who wants the music to flow — no dead air, no jarring jumps — without learning to DJ. Add a folder of songs you own, press **Harmonize**, and Prebooze orders them for key and tempo, then blends each one into the next on the beat. Listen, tweak any Transition by ear, and export the whole Mix as one file to play from a phone, a USB stick or a speaker.
+Prebooze is for the **Mix Host**: someone throwing a house party who wants the music to flow — no dead air, no jarring jumps — without learning to DJ. Add a folder of music you own, press **Harmonize**, and Prebooze orders the Tracks for key and tempo, then joins each to the next with a beat-matched Transition. Listen, tweak any Transition by ear, and export the whole Mix as one file to play from a phone, a USB stick or a speaker.
 
 - **Local and private:** no account, no backend, no streaming service. Your music never leaves your Mac.
 - **Free:** GPL-3.0, with no paid export or subscription.
@@ -226,7 +226,7 @@ When a track's structure confidence is under 0.5, the structure modes fall back 
 swift build                     # debug build
 swift test                      # the suite: synthetic audio generated in Swift, no external tools, a few minutes in debug
 swift test --filter HarmonizeTests             # one suite while you work
-scripts/test-real-music.sh ~/Music/set         # the private real-music suites (release build; see below)
+scripts/test-real-music.sh ~/Music/party       # the private real-music suites (release build; see below)
 swift scripts/icon/make-icon.swift icon.png   # regenerate the app icon artwork (then scripts/AppIcon.icns)
 scripts/build-app.sh --install  # release .app → /Applications
 ```

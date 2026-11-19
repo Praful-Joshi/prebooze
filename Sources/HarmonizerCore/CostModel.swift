@@ -95,7 +95,8 @@ public struct HarmonizeSettings: Codable, Equatable, Sendable {
     public var lockLast: UUID?
     public var timeBudget: Double = 10
     /// Local-search rounds for big Mixes; nil means `defaultSolverRounds`.
-    /// A small count makes Harmonize cheap and, with the seed, repeatable.
+    /// A small count with an infinite `timeBudget` makes Harmonize cheap and,
+    /// with the seed, exactly repeatable.
     public var rounds: Int?
     public var seed: UInt64 = 42
 
