@@ -79,7 +79,16 @@ public enum DataFolders {
                     copied += try merge(item, into: target)
                 }
             } else {
-                try fm.copyItem(at: item, to: target)
+                // Under a temporary name first, so a copy cut short is never
+                // taken for a finished one on the next try.
+                let partial = destination.appendingPathComponent(".partial-\(UUID().uuidString)")
+                do {
+                    try fm.copyItem(at: item, to: partial)
+                    try fm.moveItem(at: partial, to: target)
+                } catch {
+                    try? fm.removeItem(at: partial)
+                    throw error
+                }
                 copied += 1
             }
         }

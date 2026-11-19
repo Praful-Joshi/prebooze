@@ -106,7 +106,7 @@ struct StorageSettings: View {
             } header: {
                 Text("Where it's kept")
             } footer: {
-                Text("Inside Pregame's own container, which the App Sandbox keeps it to.")
+                Text("Pregame keeps its analysis, presets and stems in its own folder, apart from the rest of your Mac.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

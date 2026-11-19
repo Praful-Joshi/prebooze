@@ -7,7 +7,7 @@
 	     where exports go, and Mixes. -->
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
-	<!-- Read-write, because "Write Overrides to File Tags" writes into the songs. -->
+	<!-- Read-write, because "Write Overrides to File Tags" writes into the Tracks' files. -->
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
 	<!-- Each Track keeps a security-scoped bookmark, so its folder stays
