@@ -10,11 +10,13 @@ struct PregameApp: App {
     init() {
         // Before anything reads a setting, so the old app's settings come through.
         LegacyDefaults.migrateIfNeeded()
+        // Launch into a new, empty Mix rather than the system Open panel.
+        // File > Open and Open Recent still reach saved Mixes.
+        UserDefaults.standard.register(defaults: ["NSShowAppCentricOpenPanelInsteadOfUntitledFile": false])
         outputs = AudioOutputs.shared
     }
 
     var body: some Scene {
-        Settings { SettingsView().tint(Ink.accent).onAppear { _ = AudioOutputs.shared } }
         DocumentGroup(newDocument: { MixDocument() }) { file in
             ContentView(document: file.document)
                 .tint(Ink.accent)
@@ -51,6 +53,9 @@ struct PregameApp: App {
                 Button("Get Info") { post(.getInfo) }.keyboardShortcut("i", modifiers: .command)
             }
         }
+        // After the DocumentGroup: SwiftUI opens the first scene at launch, and
+        // with Settings first the app opened on Settings instead of a Mix.
+        Settings { SettingsView().tint(Ink.accent).onAppear { _ = AudioOutputs.shared } }
     }
 
     private func post(_ name: Notification.Name) {
