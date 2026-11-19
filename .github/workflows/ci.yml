@@ -1,8 +1,16 @@
 name: CI
 
+# Pull requests run once (not again for the branch push) and test on macOS 26
+# only, so small pushes stay quick. Pushes to main and a weekly run also test on
+# macOS 15, the minimum; the deployment target already makes the compiler reject
+# newer APIs on every build.
 on:
   push:
+    branches: [main]
   pull_request:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC: catches runner image changes too
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, macos-26]
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["macos-26"]') || fromJSON('["macos-15", "macos-26"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
