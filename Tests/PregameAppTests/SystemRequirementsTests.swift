@@ -26,7 +26,12 @@ final class SystemRequirementsTests: XCTestCase {
         XCTAssertTrue(try text("README.md").contains("**macOS 15 Sequoia or later.**"))
     }
 
+    /// Pull requests test on macOS 26 only, to keep small pushes quick; every
+    /// push to main and a weekly run also test on the minimum, macOS 15.
     func testCIBuildsAndTestsOnTheMinimum() throws {
-        XCTAssertTrue(try text(".github/workflows/ci.yml").contains("os: [macos-15, macos-26]"))
+        let ci = try text(".github/workflows/ci.yml")
+        XCTAssertTrue(ci.contains(#"github.event_name == 'pull_request' && fromJSON('["macos-26"]') || fromJSON('["macos-15", "macos-26"]')"#))
+        XCTAssertTrue(ci.contains("branches: [main]"))
+        XCTAssertTrue(ci.contains("schedule:"))
     }
 }
