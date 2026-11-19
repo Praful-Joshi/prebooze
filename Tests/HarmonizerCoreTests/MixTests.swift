@@ -104,7 +104,7 @@ final class ExportTests: XCTestCase {
     }
 
     func testProjectExportWritesEverything() throws {
-        let dir = TestAudio.tempDir()
+        let dir = TestFiles.tempDir()
         let cache = AnalysisCache(directory: dir.appendingPathComponent("cache"))
         var project = MixProject()
         for (k, bpm) in [124.0, 125.0, 126.0].enumerated() {

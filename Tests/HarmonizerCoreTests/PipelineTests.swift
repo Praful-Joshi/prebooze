@@ -2,38 +2,17 @@ import Foundation
 import XCTest
 @testable import HarmonizerCore
 
-/// Makes small tagged audio files with ffmpeg (skipped if ffmpeg is missing).
-enum TestAudio {
-    static let ffmpeg = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"]
-        .first { FileManager.default.isExecutableFile(atPath: $0) }
-
-    static func make(_ url: URL, seconds: Double = 2, title: String, artist: String = "Test") throws {
-        guard let ffmpeg else { throw XCTSkip("ffmpeg needed") }
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: ffmpeg)
-        p.arguments = ["-loglevel", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=\(seconds)",
-                       "-metadata", "title=\(title)", "-metadata", "artist=\(artist)", url.path]
-        try p.run()
-        p.waitUntilExit()
-        XCTAssertEqual(p.terminationStatus, 0)
-    }
-
-    static func tempDir() -> URL {
-        let d = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
-        return d
-    }
-}
-
 final class TagTests: XCTestCase {
     func testRoundTripAllFormats() throws {
-        let dir = TestAudio.tempDir()
+        let dir = TestFiles.tempDir()
         for (name, key, bpm) in [("a.mp3", "Am", 124.0), ("b.flac", "C", 126.5), ("c.m4a", "F#m", 125.0),
                                  ("d.wav", "Eb", 128.0), ("e.aiff", "Gm", 122.0)] {
             let url = dir.appendingPathComponent(name)
-            try TestAudio.make(url, title: name)
+            try SyntheticAudio.tone(frequency: 440, seconds: 2).write(to: url, tags: .init(title: name, artist: "Test"))
             XCTAssertTrue(writeTags(url, key: parseKey(key), bpm: bpm), name)
             let tags = try XCTUnwrap(readTags(url), name)
+            XCTAssertEqual(tags.title, name)
+            XCTAssertEqual(tags.artist, "Test", name)
             XCTAssertEqual(parseKey(tags.keyText), parseKey(key), name)
             XCTAssertEqual(tags.bpm ?? 0, bpm, accuracy: 0.01, name)
             XCTAssertGreaterThan(tags.duration ?? 0, 1.5, name)
@@ -111,7 +90,7 @@ final class PipelineTests: XCTestCase {
     }
 
     func testImportOldRun() throws {
-        let set = TestAudio.tempDir()
+        let set = TestFiles.tempDir()
         let run = set.appendingPathComponent("harmonized/2026-09-26_151803_mood")
         try FileManager.default.createDirectory(at: run, withIntermediateDirectories: true)
         let csv = """
@@ -159,25 +138,8 @@ final class PipelineTests: XCTestCase {
 }
 
 final class AnalysisTests: XCTestCase {
-    /// Synthetic four-on-the-floor kick track at a known BPM and offset.
-    func kickTrack(bpm: Double, offsetSecs: Double, bars: Int, sr: Double = 44100) -> DecodedAudio {
-        let per = 60 / bpm * sr
-        let n = Int(offsetSecs * sr + Double(bars * 4) * per)
-        var y = [Float](repeating: 0, count: n)
-        let kickLen = Int(0.15 * sr)
-        for b in 0..<(bars * 4) {
-            let start = Int(offsetSecs * sr + Double(b) * per)
-            for i in 0..<kickLen where start + i < n {
-                let t = Double(i) / sr
-                y[start + i] += Float(sin(2 * .pi * 55 * t) * exp(-t * 25)) * 0.8
-                if i < 200 { y[start + i] += Float(sin(2 * .pi * 3000 * t)) * 0.3 * Float(1 - Double(i) / 200) }
-            }
-        }
-        return DecodedAudio(sampleRate: sr, left: y, right: y)
-    }
-
     func testBpmAndBeatPhaseOnSyntheticKicks() {
-        let audio = kickTrack(bpm: 124, offsetSecs: 0.731, bars: 64)
+        let audio = SyntheticAudio.clicks(bpm: 124, seconds: 0.731 + 64 * 4 * 60 / 124, offset: 0.731).decoded
         let (a, wave) = analyse(audio)
         XCTAssertEqual(a.bpm ?? 0, 124, accuracy: 0.01)
         XCTAssertGreaterThan(a.beatConfidence, 0.9)
@@ -193,9 +155,9 @@ final class AnalysisTests: XCTestCase {
     }
 
     func testCacheStoresAndReloads() throws {
-        let dir = TestAudio.tempDir()
+        let dir = TestFiles.tempDir()
         let cache = AnalysisCache(directory: dir)
-        let audio = kickTrack(bpm: 128, offsetSecs: 0.2, bars: 24)
+        let audio = SyntheticAudio.clicks(bpm: 128, seconds: 0.2 + 24 * 4 * 60 / 128, offset: 0.2).decoded
         let (a, w) = analyse(audio)
         cache.store("abc", a, w)
         let fresh = AnalysisCache(directory: dir)

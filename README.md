@@ -192,7 +192,7 @@ When a track's structure confidence is under 0.5, the structure modes fall back 
 
 ```sh
 swift build                     # debug build
-swift test                      # unit + engine parity tests
+swift test                      # unit + engine parity tests (no external tools: test audio is generated in Swift)
 HARMONIZER_PARITY=1 swift test -c release --filter Parity   # vs Mixxx, needs the music files
 HARMONIZER_EXPORT=~/Music/set HARMONIZER_EXPORT_OUT=/tmp/x swift test -c release --filter RealExport
 HARMONIZER_STRUCTURE=~/Music/set swift test -c release --filter RealStructure   # print detected sections
@@ -204,7 +204,6 @@ scripts/build-app.sh --install  # release .app → /Applications
 
 - Xcode 27 / Swift 6
 - Homebrew `taglib` (bundled into the .app), `rubberband`, `libsamplerate`, `lame`, `mpg123` (linked statically)
-- `ffmpeg`, for tests only
 
 **Layout:**
 
@@ -222,11 +221,12 @@ scripts/build-app.sh --install  # release .app → /Applications
 | `Sources/COnnx`, `Vendor/onnxruntime`, `Models/` | ONNX Runtime 1.31 (MIT) C shim + library, exported Demucs model (MIT) |
 | `scripts/stems/` | How the model was exported, reference implementation, benchmarks |
 | `Sources/HarmonizerCore/Transitions.swift` | Curves, specs, presets, tempo glide |
-| `Sources/HarmonizerCore/Export.swift` | WAV/MP3 export, tracklist, cue sheet |
+| `Sources/HarmonizerCore/Export.swift` | WAV/MP3 export (the writer also does FLAC), tracklist, cue sheet |
 | `Sources/CRubberBand`, `Sources/CLame` | Rubber Band (GPL) and LAME (LGPL), linked statically |
 | `Sources/HarmonizerApp` | SwiftUI app |
 | `Sources/QMDSP` | Queen Mary DSP from Mixxx 2.5 (GPL) + C shim |
 | `Sources/CTagLib` | TagLib bridge |
 | `Tests/HarmonizerCoreTests/Fixtures` | Parity fixtures captured from the retired Python engine and from Mixxx |
+| `Tests/HarmonizerCoreTests/Support/SyntheticAudio.swift` | Test audio generator: click tracks, chords in a key, energy ramps, section changes, silence; writes WAV/MP3/FLAC (plus M4A, AIFF) with tags |
 
 **Licences:** QM DSP and Rubber Band are GPL-2.0+, and TagLib and LAME are LGPL. ONNX Runtime and Demucs are MIT. That's fine for personal use; it only matters if you ever wanted to distribute the app closed-source.

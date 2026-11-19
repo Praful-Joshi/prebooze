@@ -18,9 +18,9 @@ typedef struct {
 /// Read title, artist, initial key, BPM and duration.
 ctag_info ctag_read(const char *path);
 
-/// Write key (NULL = leave unchanged) and BPM (<= 0 = leave unchanged).
-/// Returns 1 on success.
-int ctag_write(const char *path, const char *key, double bpm);
+/// Write title, artist, key (each NULL or empty = leave unchanged) and BPM
+/// (<= 0 = leave unchanged). Strings are UTF-8. Returns 1 on success.
+int ctag_write(const char *path, const char *title, const char *artist, const char *key, double bpm);
 
 #ifdef __cplusplus
 }
