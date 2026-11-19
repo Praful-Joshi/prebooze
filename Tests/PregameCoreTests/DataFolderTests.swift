@@ -10,22 +10,22 @@ final class DataFolderTests: XCTestCase {
     private let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
 
     func testAnalysisIsStillCachedInTheHarmonizerFolder() {
-        XCTAssertEqual(AnalysisCache.shared.directory.standardizedFileURL,
-                       support.appendingPathComponent("Harmonizer/Analysis").standardizedFileURL)
+        XCTAssertEqual(AnalysisCache.shared.directory.standardizedFileURL.path,
+                       support.appendingPathComponent("Harmonizer/Analysis").standardizedFileURL.path)
     }
 
     func testStemsAreStillCachedInTheHarmonizerFolder() {
-        XCTAssertEqual(StemCache.shared.directory.standardizedFileURL,
-                       support.appendingPathComponent("Harmonizer/Stems").standardizedFileURL)
+        XCTAssertEqual(StemCache.shared.directory.standardizedFileURL.path,
+                       support.appendingPathComponent("Harmonizer/Stems").standardizedFileURL.path)
     }
 
     func testPresetsAreStillInTheHarmonizerFolder() {
-        XCTAssertEqual(PresetStore.shared.url.standardizedFileURL,
-                       support.appendingPathComponent("Harmonizer/Presets.json").standardizedFileURL)
+        XCTAssertEqual(PresetStore.shared.url.standardizedFileURL.path,
+                       support.appendingPathComponent("Harmonizer/Presets.json").standardizedFileURL.path)
     }
 
     func testTheCompiledModelIsStillInTheHarmonizerCache() {
-        XCTAssertEqual(StemSeparator.coreMLCacheURL.standardizedFileURL,
-                       caches.appendingPathComponent("Harmonizer/CoreML").standardizedFileURL)
+        XCTAssertEqual(StemSeparator.coreMLCacheURL.standardizedFileURL.path,
+                       caches.appendingPathComponent("Harmonizer/CoreML").standardizedFileURL.path)
     }
 }
