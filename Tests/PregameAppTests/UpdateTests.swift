@@ -181,6 +181,39 @@ final class UpdateTests: XCTestCase {
                        "wrote an appcast the app would reject")
     }
 
+    /// Rotating the update key needs one bridge release that carries the new
+    /// public key but is signed with the old one, which installed copies still
+    /// trust. Naming that installed key lets the script check against it.
+    func testABridgeReleaseIsCheckedAgainstTheInstalledKey() throws {
+        let work = try temporaryFolder("appcast-bridge")
+        defer { try? FileManager.default.removeItem(at: work) }
+        let (oldKey, oldKeyFile) = try keyFile(in: work)
+        let newKey = Curve25519.Signing.PrivateKey()
+        let dmg = try standInDMG(in: work, trusting: newKey.publicKey)
+
+        let out = work.appendingPathComponent("out")
+        let installed = oldKey.publicKey.rawRepresentation.base64EncodedString()
+        let result = try run(Self.root.appendingPathComponent("scripts/make-appcast.sh").path, [dmg.path, out.path],
+                             environment: ["PREGAME_SPARKLE_KEY_FILE": oldKeyFile.path,
+                                           "PREGAME_INSTALLED_PUBLIC_KEY": installed])
+        XCTAssertEqual(result.status, 0, result.output)
+        let appcast = try XMLDocument(contentsOf: out.appendingPathComponent("appcast.xml"))
+        let enclosure = try XCTUnwrap(try appcast.nodes(forXPath: "//item/enclosure").first as? XMLElement)
+        let signature = try XCTUnwrap(Data(base64Encoded: enclosure.attribute(forName: "sparkle:edSignature")?.stringValue ?? ""))
+        XCTAssertTrue(oldKey.publicKey.isValidSignature(signature, for: try Data(contentsOf: dmg)),
+                      "the bridge DMG isn't signed with the installed key")
+        let feed = try run(Self.root.appendingPathComponent(".build/artifacts/sparkle/Sparkle/bin/sign_update").path,
+                           ["--verify", "--ed-key-file", oldKeyFile.path, out.appendingPathComponent("appcast.xml").path])
+        XCTAssertEqual(feed.status, 0, "the bridge appcast isn't signed with the installed key: \(feed.output)")
+
+        // Naming a key other than the signing key still fails.
+        let other = Curve25519.Signing.PrivateKey().publicKey.rawRepresentation.base64EncodedString()
+        let wrong = try run(Self.root.appendingPathComponent("scripts/make-appcast.sh").path, [dmg.path, work.appendingPathComponent("out2").path],
+                            environment: ["PREGAME_SPARKLE_KEY_FILE": oldKeyFile.path,
+                                          "PREGAME_INSTALLED_PUBLIC_KEY": other])
+        XCTAssertNotEqual(wrong.status, 0, wrong.output)
+    }
+
     /// Without a DMG the script says how to use it rather than signing nothing.
     func testTheScriptNeedsADMG() throws {
         let result = try run(Self.root.appendingPathComponent("scripts/make-appcast.sh").path, [])

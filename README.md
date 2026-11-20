@@ -33,7 +33,7 @@ scripts/build-app.sh --install   # release build of Pregame.app into /Applicatio
 
 The app updates itself with Sparkle from an EdDSA-signed appcast on GitHub Releases. Pushing a version tag builds, signs and publishes a release once the maintainer approves it; see [docs/releasing.md](docs/releasing.md) and [docs/updates.md](docs/updates.md).
 
-`build-app.sh` also bundles the Demucs stem model (`Models/htdemucs.onnx.data`, 161 MB), which isn't in the repo. Export it as described in [`scripts/stems/README.md`](scripts/stems/README.md); everything except stem separation works without it.
+`build-app.sh` also bundles the Demucs stem model (`Models/htdemucs.onnx.data`, 161 MB), which is too big for the repo. `scripts/fetch-vendor.sh --model` downloads it and checks its checksum (or rebuild it as described in [`scripts/stems/README.md`](scripts/stems/README.md)); everything except stem separation works without it.
 
 Every pull request and every push to `main` is built and tested by [GitHub Actions](.github/workflows/ci.yml). More developer detail is under [Developing](#developing).
 

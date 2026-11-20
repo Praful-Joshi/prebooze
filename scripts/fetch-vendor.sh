@@ -58,6 +58,7 @@ fi
 
 (( MODEL )) || exit 0
 
+[[ -f "$MODELS/htdemucs.onnx" ]] || { echo "$MODELS/htdemucs.onnx is missing (it's in the repository)" >&2; exit 1; }
 [[ "$(sha256 "$MODELS/htdemucs.onnx")" == "$MODEL_GRAPH_SHA256" ]] \
   || { echo "$MODELS/htdemucs.onnx doesn't match the pinned Demucs model" >&2; exit 1; }
 WEIGHTS="$MODELS/htdemucs.onnx.data"

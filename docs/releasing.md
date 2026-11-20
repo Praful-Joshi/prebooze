@@ -4,16 +4,17 @@ A release is a GitHub Release with two files: `Pregame-<version>.dmg` and `appca
 
 Pushing a version tag starts `.github/workflows/release.yml`. The job waits until the maintainer approves the protected `release` environment. Then, on macOS 15 (the minimum macOS), it:
 
-1. checks that the tag is `v` + `CFBundleShortVersionString` from `scripts/Info.plist` (`scripts/release.sh`)
-2. checks that the Homebrew static libraries it links (Rubber Band, libsamplerate, LAME, mpg123) were built for macOS 15
-3. builds TagLib from its pinned, checksummed source for macOS 15 (`scripts/build-taglib.sh`)
-4. fetches ONNX Runtime and the Demucs model, and checks both against pinned SHA-256 checksums (`scripts/fetch-vendor.sh --model`)
-5. builds and signs the app with the release certificate (`scripts/build-app.sh`), then checks every Mach-O in it loads on macOS 15 (`scripts/check-min-macos.sh`)
-6. packages the DMG, then generates the appcast and signs it with the update key (`scripts/make-appcast.sh`). It stops if that key isn't the one the app trusts (`SUPublicEDKey`)
-7. generates a build-provenance attestation for the DMG and the appcast
-8. publishes both to a GitHub Release for the tag, marked latest
+1. checks that the environment's secrets are set, that the tagged commit is on `main`, and that `CFBundleVersion` is higher than the latest release's
+2. checks that the tag is `v` + `CFBundleShortVersionString` from `scripts/Info.plist` (`scripts/release.sh`)
+3. checks that the Homebrew static libraries it links (Rubber Band, libsamplerate, LAME, mpg123) were built for macOS 15
+4. builds TagLib from its pinned, checksummed source for macOS 15 (`scripts/build-taglib.sh`)
+5. fetches ONNX Runtime and the Demucs model, and checks both against pinned SHA-256 checksums (`scripts/fetch-vendor.sh --model`)
+6. builds and signs the app with the release certificate (`scripts/build-app.sh`), then checks every Mach-O in it loads on macOS 15 (`scripts/check-min-macos.sh`)
+7. packages the DMG, then generates the appcast and signs it with the update key (`scripts/make-appcast.sh`). It stops if that key isn't the one installed copies trust (`SUPublicEDKey`)
+8. generates a build-provenance attestation for the DMG and the appcast
+9. publishes both to a GitHub Release for the tag, marked latest
 
-Only this job can read the signing certificate and the update key: they're secrets of the `release` environment, which only accepts `v*` tags. No workflow that runs for a pull request can read a secret. CI's `release-rehearsal` job runs steps 1 to 6 on every pull request and push to `main`, with a throwaway certificate and update key, then launches the packaged app on macOS 15. A broken release therefore shows up before anyone tags one.
+Only this job can read the signing certificate and the update key: they're secrets of the `release` environment, which only accepts `v*` tags. No workflow that runs for a pull request can read a secret. CI's `release-rehearsal` job runs steps 2 to 7 on every pull request and push to `main`, with a throwaway certificate and update key, then launches the packaged app on macOS 15. A broken release therefore shows up before anyone tags one.
 
 ## One-time setup
 
@@ -78,9 +79,9 @@ GitHub secrets can't be read back, so they're not a backup. Check the backups on
 Rotate it only if it may have leaked. Installed copies trust exactly one update key, the `SUPublicEDKey` they were built with, and Sparkle accepts an update only if its DMG is signed with that key.
 
 1. Generate a new key on a Mac that doesn't hold the old one (or with a new `--account`), and back it up (`generate_keys -x`).
-2. Release a bridge version whose `SUPublicEDKey` is the **new** public key, but sign it with the **old** key: leave `PREGAME_SPARKLE_KEY` as it is. Installed copies check the DMG with the key they have before opening it (`SUVerifyUpdateBeforeExtraction`), so they install it. Sparkle's other way to rotate, falling back to the code signature, needs a Developer ID team, which a self-signed app doesn't have. `make-appcast.sh` checks the signature against `SUPublicEDKey` in the DMG, so for this one release sign the appcast by hand with `generate_appcast` ([updates.md](updates.md)). Rehearse the bridge first with the end-to-end update test in updates.md.
+2. Release a bridge version whose `SUPublicEDKey` is the **new** public key, but sign it with the **old** key: leave `PREGAME_SPARKLE_KEY` as it is. Installed copies check the DMG with the key they have before opening it (`SUVerifyUpdateBeforeExtraction`), so they install it. Sparkle's other way to rotate, falling back to the code signature, needs a Developer ID team, which a self-signed app doesn't have. Before tagging the bridge, add the **old** public key as the environment variable (not a secret) `PREGAME_INSTALLED_PUBLIC_KEY` of the `release` environment: `make-appcast.sh` then checks the signature against that key rather than the app's, and signs the DMG itself, because `generate_appcast` won't sign with a key the app doesn't carry. Rehearse the bridge first with the end-to-end update test in [updates.md](updates.md).
 3. Leave the bridge as the latest release for a few weeks, so that copies check for updates and pick it up. Each appcast lists only the latest release, so a copy that hasn't installed the bridge by the time the next release comes out can't update; its Mix Host has to download the new DMG by hand.
-4. Replace `PREGAME_SPARKLE_KEY` in the `release` environment with the new key. Every later release is signed with it.
+4. Replace `PREGAME_SPARKLE_KEY` in the `release` environment with the new key, and delete `PREGAME_INSTALLED_PUBLIC_KEY`. Every later release is signed with the new key.
 
 Don't change the signing certificate in the same release. Sparkle accepts a change of one or the other, as long as the remaining one still checks out.
 
@@ -91,7 +92,7 @@ If the old key leaked, an attacker can sign a DMG with it, but still has to get 
 Avoid it. macOS identifies the app by its designated requirement, which includes the certificate's hash ([signing.md](signing.md)). With a new certificate macOS sees a different app: Mix Hosts are asked again for the folders they had granted, and the app's container may need their consent. Rotate only if the private key leaked.
 
 1. Create the new certificate (`scripts/make-signing-identity.sh` with a new name, set as `PREGAME_SIGNING_IDENTITY`) and back it up.
-2. Replace `PREGAME_SIGNING_P12` and `PREGAME_SIGNING_P12_PASSPHRASE` in the `release` environment, and set `PREGAME_SIGNING_IDENTITY` in `release.yml` if the name changed.
+2. Replace `PREGAME_SIGNING_P12` and `PREGAME_SIGNING_P12_PASSPHRASE` in the `release` environment, and if the name changed, add `PREGAME_SIGNING_IDENTITY: <new name>` to the release job's `env` in `release.yml`.
 3. Keep the same update key for this release. Sparkle installs an update whose code signature changed as long as its EdDSA signature checks out with the key the installed copy trusts.
 4. Say in the release notes that macOS will ask for folder access once more.
 

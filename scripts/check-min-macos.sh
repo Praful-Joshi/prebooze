@@ -24,6 +24,7 @@ fi
 # True if version $1 is newer than version $2 (missing parts count as 0).
 newer() {
   local -a a b
+  local i
   a=("${(@s:.:)1}") b=("${(@s:.:)2}")
   for i in 1 2 3; do
     (( ${a[i]:-0} > ${b[i]:-0} )) && return 0

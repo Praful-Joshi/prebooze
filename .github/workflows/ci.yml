@@ -40,12 +40,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # macos-15's default Xcode is older than the one the code needs; use its
-      # newest release Xcode (betas excluded).
+      # newest release Xcode (no betas or release candidates).
       - name: Select Xcode
         if: matrix.os == 'macos-15'
         run: |
           ls -d /Applications/Xcode*.app
-          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)"
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -E '/Xcode_[0-9.]+\.app$' | sort -V | tail -1)"
 
       - name: Toolchain
         run: |
@@ -176,7 +176,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Select Xcode
-        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)"
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -E '/Xcode_[0-9.]+\.app$' | sort -V | tail -1)"
 
       # TagLib is built from pinned source by scripts/release.sh, not from Homebrew.
       - name: Native libraries (Homebrew)

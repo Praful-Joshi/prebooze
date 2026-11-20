@@ -286,7 +286,7 @@ public struct TransitionConfig: Sendable {
     public func preset(_ name: String) -> Preset? { presets.first { $0.name == name } }
 
     static func load() -> TransitionConfig {
-        let url = Bundle.module.url(forResource: "transitions", withExtension: "json")!
+        let url = Bundle.pregameCore.url(forResource: "transitions", withExtension: "json")!
         // Bundled with the app; unreadable means a broken build.
         let json = try! JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
         let order = ["Long Blend", "Smooth Blend", "Filter Blend", "Echo Out", "Quick Cut", "Stem Swap"]

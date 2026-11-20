@@ -10,6 +10,9 @@
 # Release notes: put Pregame-0.2.md (or .html) next to the DMG to embed them.
 # Signing key: the update key in your login keychain, or set
 # PREGAME_SPARKLE_KEY_FILE to a file holding it (`-` reads it from stdin).
+# The key must be the one installed copies trust: the app's SUPublicEDKey, or
+# for the one bridge release that rotates the key, PREGAME_INSTALLED_PUBLIC_KEY
+# (docs/releasing.md).
 set -euo pipefail
 ROOT="${0:A:h:h}"
 REPOSITORY="https://github.com/Praful-Joshi/pregame"
@@ -44,7 +47,8 @@ if [[ ${#APPS} != 1 ]]; then
   exit 1
 fi
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APPS[1]/Contents/Info.plist")"
-TRUSTED_KEY="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APPS[1]/Contents/Info.plist")"
+APP_KEY="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APPS[1]/Contents/Info.plist")"
+TRUSTED_KEY="${PREGAME_INSTALLED_PUBLIC_KEY:-$APP_KEY}"
 hdiutil detach -quiet "$MOUNT"
 rmdir "$MOUNT"
 
@@ -55,10 +59,23 @@ cp "$DMG" "$STAGE/"
 NOTES=("${DMG:r}".{md,html}(N))
 (( ${#NOTES} )) && cp "$NOTES[1]" "$STAGE/"
 
-KEY=()
-[[ -n "${PREGAME_SPARKLE_KEY_FILE:-}" ]] && KEY=(--ed-key-file "$PREGAME_SPARKLE_KEY_FILE")
+# Run a Sparkle tool with the update key. A key on stdin is read once and piped
+# to each tool, so it never touches the disk.
+KEY_FILE="${PREGAME_SPARKLE_KEY_FILE:-}"
+KEY_TEXT=""
+if [[ "$KEY_FILE" == - ]]; then
+  KEY_TEXT="$(cat)"
+  [[ -n "$KEY_TEXT" ]] || { echo "error: no update key on standard input." >&2; exit 1; }
+fi
+with_key() {
+  case "$KEY_FILE" in
+    "") "$@" ;;
+    -) printf '%s' "$KEY_TEXT" | "$@" --ed-key-file - ;;
+    *) "$@" --ed-key-file "$KEY_FILE" ;;
+  esac
+}
 
-"$TOOLS/generate_appcast" "${KEY[@]}" \
+with_key "$TOOLS/generate_appcast" \
   --download-url-prefix "$REPOSITORY/releases/download/v$VERSION/" \
   --embed-release-notes \
   --maximum-versions 1 \
@@ -66,13 +83,21 @@ KEY=()
   -o "$WORK/appcast.xml" \
   "$STAGE"
 
-# Installed copies accept only an update signed with the key their Info.plist
-# trusts. With any other key, generate_appcast only warns (and leaves the DMG
-# unsigned), so check the signature against SUPublicEDKey before writing anything.
 SIGNATURE="$(xmllint --xpath 'string(//item/enclosure/@*[local-name()="edSignature"])' "$WORK/appcast.xml")"
+# generate_appcast leaves the DMG unsigned when the key isn't the app's own,
+# which is the point of a bridge release: sign it, then sign the feed again.
+if [[ -z "$SIGNATURE" && "$TRUSTED_KEY" != "$APP_KEY" ]]; then
+  SIGNATURE="$(with_key "$TOOLS/sign_update" -p "$DMG")"
+  sed -i '' "s|<enclosure url=|<enclosure sparkle:edSignature=\"$SIGNATURE\" url=|" "$WORK/appcast.xml"
+  with_key "$TOOLS/sign_update" "$WORK/appcast.xml"
+fi
+
+# Installed copies accept only an update signed with the key they trust. With
+# any other key generate_appcast only warns, so check the signature before
+# writing anything.
 if [[ -z "$SIGNATURE" ]] || ! swift "$ROOT/scripts/verify-update-signature.swift" "$DMG" "$SIGNATURE" "$TRUSTED_KEY"; then
-  echo "error: the update key doesn't match SUPublicEDKey ($TRUSTED_KEY) in the app's Info.plist, so installed copies would reject this update." >&2
-  echo "Sign with the key whose public half that is (docs/updates.md); never change SUPublicEDKey to fit a new key." >&2
+  echo "error: the update key doesn't match $TRUSTED_KEY, the key installed copies trust (SUPublicEDKey, or PREGAME_INSTALLED_PUBLIC_KEY for a bridge release), so they would reject this update." >&2
+  echo "Sign with the key whose public half that is (docs/releasing.md); never change SUPublicEDKey to fit a new key." >&2
   exit 1
 fi
 mkdir -p "$OUT"
