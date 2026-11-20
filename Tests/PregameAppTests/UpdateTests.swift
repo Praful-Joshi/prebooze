@@ -97,27 +97,15 @@ final class UpdateTests: XCTestCase {
 
     // MARK: - The appcast
 
-    /// Given a release DMG, the script writes an appcast whose single item
-    /// points at that DMG in the version's GitHub Release, and signs both the
-    /// DMG and the appcast with the update key.
-    func testTheScriptWritesASignedAppcastForADMG() throws {
-        let work = FileManager.default.temporaryDirectory.appendingPathComponent("appcast-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: work) }
-
-        // A throwaway key, in the format generate_keys exports: the base64 seed.
-        let key = Curve25519.Signing.PrivateKey()
-        let keyFile = work.appendingPathComponent("key.txt")
-        try key.rawRepresentation.base64EncodedString().write(to: keyFile, atomically: true, encoding: .utf8)
-
-        // A stand-in app with the real Info.plist (version 9.8, build 987) and
-        // the throwaway public key, packaged the way a release DMG is.
+    /// A stand-in app with the real Info.plist (version 9.8, build 987),
+    /// trusting the given update key, packaged the way a release DMG is.
+    private func standInDMG(in work: URL, trusting publicKey: Curve25519.Signing.PublicKey) throws -> URL {
         let app = work.appendingPathComponent("dmg/Pregame.app/Contents")
         try FileManager.default.createDirectory(at: app.appendingPathComponent("MacOS"), withIntermediateDirectories: true)
         var info = try plist("scripts/Info.plist")
         info["CFBundleShortVersionString"] = "9.8"
         info["CFBundleVersion"] = "987"
-        info["SUPublicEDKey"] = key.publicKey.rawRepresentation.base64EncodedString()
+        info["SUPublicEDKey"] = publicKey.rawRepresentation.base64EncodedString()
         try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
             .write(to: app.appendingPathComponent("Info.plist"))
         try Data("#!/bin/sh\n".utf8).write(to: app.appendingPathComponent("MacOS/Pregame"))
@@ -125,6 +113,31 @@ final class UpdateTests: XCTestCase {
         let made = try run("/usr/bin/hdiutil", ["create", "-quiet", "-volname", "Pregame", "-fs", "HFS+",
                                                 "-srcfolder", work.appendingPathComponent("dmg").path, "-format", "UDZO", dmg.path])
         XCTAssertEqual(made.status, 0, made.output)
+        return dmg
+    }
+
+    /// A throwaway key, in the format generate_keys exports: the base64 seed.
+    private func keyFile(in work: URL) throws -> (key: Curve25519.Signing.PrivateKey, file: URL) {
+        let key = Curve25519.Signing.PrivateKey()
+        let file = work.appendingPathComponent("key-\(UUID().uuidString).txt")
+        try key.rawRepresentation.base64EncodedString().write(to: file, atomically: true, encoding: .utf8)
+        return (key, file)
+    }
+
+    private func temporaryFolder(_ name: String) throws -> URL {
+        let work = FileManager.default.temporaryDirectory.appendingPathComponent("\(name)-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
+        return work
+    }
+
+    /// Given a release DMG, the script writes an appcast whose single item
+    /// points at that DMG in the version's GitHub Release, and signs both the
+    /// DMG and the appcast with the update key.
+    func testTheScriptWritesASignedAppcastForADMG() throws {
+        let work = try temporaryFolder("appcast")
+        defer { try? FileManager.default.removeItem(at: work) }
+        let (key, keyFile) = try keyFile(in: work)
+        let dmg = try standInDMG(in: work, trusting: key.publicKey)
 
         let out = work.appendingPathComponent("out")
         let result = try run(Self.root.appendingPathComponent("scripts/make-appcast.sh").path, [dmg.path, out.path],
@@ -148,6 +161,24 @@ final class UpdateTests: XCTestCase {
 
         let text = try String(contentsOf: out.appendingPathComponent("appcast.xml"), encoding: .utf8)
         XCTAssertTrue(text.contains("sparkle-signatures:"), "the appcast itself isn't signed")
+    }
+
+    /// Signing with a key the app doesn't trust would publish an update every
+    /// installed copy rejects, so the script refuses and writes no appcast.
+    func testTheScriptRefusesAKeyTheAppDoesntTrust() throws {
+        let work = try temporaryFolder("appcast-wrong-key")
+        defer { try? FileManager.default.removeItem(at: work) }
+        let trusted = Curve25519.Signing.PrivateKey()
+        let (_, otherKeyFile) = try keyFile(in: work)
+        let dmg = try standInDMG(in: work, trusting: trusted.publicKey)
+
+        let out = work.appendingPathComponent("out")
+        let result = try run(Self.root.appendingPathComponent("scripts/make-appcast.sh").path, [dmg.path, out.path],
+                             environment: ["PREGAME_SPARKLE_KEY_FILE": otherKeyFile.path])
+        XCTAssertNotEqual(result.status, 0, result.output)
+        XCTAssertTrue(result.output.contains("SUPublicEDKey"), result.output)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: out.appendingPathComponent("appcast.xml").path),
+                       "wrote an appcast the app would reject")
     }
 
     /// Without a DMG the script says how to use it rather than signing nothing.

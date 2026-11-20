@@ -44,6 +44,7 @@ if [[ ${#APPS} != 1 ]]; then
   exit 1
 fi
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APPS[1]/Contents/Info.plist")"
+TRUSTED_KEY="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APPS[1]/Contents/Info.plist")"
 hdiutil detach -quiet "$MOUNT"
 rmdir "$MOUNT"
 
@@ -57,12 +58,23 @@ NOTES=("${DMG:r}".{md,html}(N))
 KEY=()
 [[ -n "${PREGAME_SPARKLE_KEY_FILE:-}" ]] && KEY=(--ed-key-file "$PREGAME_SPARKLE_KEY_FILE")
 
-mkdir -p "$OUT"
 "$TOOLS/generate_appcast" "${KEY[@]}" \
   --download-url-prefix "$REPOSITORY/releases/download/v$VERSION/" \
   --embed-release-notes \
   --maximum-versions 1 \
   --maximum-deltas 0 \
-  -o "$OUT/appcast.xml" \
+  -o "$WORK/appcast.xml" \
   "$STAGE"
+
+# Installed copies accept only an update signed with the key their Info.plist
+# trusts. With any other key, generate_appcast only warns (and leaves the DMG
+# unsigned), so check the signature against SUPublicEDKey before writing anything.
+SIGNATURE="$(xmllint --xpath 'string(//item/enclosure/@*[local-name()="edSignature"])' "$WORK/appcast.xml")"
+if [[ -z "$SIGNATURE" ]] || ! swift "$ROOT/scripts/verify-update-signature.swift" "$DMG" "$SIGNATURE" "$TRUSTED_KEY"; then
+  echo "error: the update key doesn't match SUPublicEDKey ($TRUSTED_KEY) in the app's Info.plist, so installed copies would reject this update." >&2
+  echo "Sign with the key whose public half that is (docs/updates.md); never change SUPublicEDKey to fit a new key." >&2
+  exit 1
+fi
+mkdir -p "$OUT"
+mv "$WORK/appcast.xml" "$OUT/appcast.xml"
 echo "Wrote $OUT/appcast.xml for Pregame $VERSION; upload it and ${DMG:t} to the v$VERSION release."

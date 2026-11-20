@@ -1,0 +1,104 @@
+name: Release
+
+# Pushing a version tag (v0.2) builds, signs and packages the DMG, signs the
+# appcast, and publishes both to a GitHub Release (docs/releasing.md). The job
+# waits for the maintainer to approve the protected `release` environment,
+# which alone holds the signing certificate and the update key. Pull requests
+# never run this; CI rehearses it with throwaway keys (release-rehearsal).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release ${{ github.ref_name }}
+    # Homebrew's libraries target the macOS they're built on, so the release
+    # builds on the minimum, macOS 15 (scripts/check-min-macos.sh checks).
+    runs-on: macos-15
+    environment: release
+    timeout-minutes: 45
+    permissions:
+      contents: write       # create the release
+      id-token: write       # sign the provenance attestation
+      attestations: write   # store it
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      TAG: ${{ github.ref_name }}
+    steps:
+      # Third-party actions are pinned to commit SHAs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)"
+
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+
+      # TagLib is built from pinned source by scripts/release.sh, not from Homebrew.
+      - name: Native libraries (Homebrew)
+        run: brew install rubberband libsamplerate lame mpg123
+
+      - name: Signing identity
+        env:
+          P12: ${{ secrets.PREGAME_SIGNING_P12 }}
+          P12_PASSPHRASE: ${{ secrets.PREGAME_SIGNING_P12_PASSPHRASE }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          PASS="$(openssl rand -hex 16)"
+          security create-keychain -p "$PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$PASS" "$KEYCHAIN"
+          printf '%s' "$P12" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security import "$RUNNER_TEMP/signing.p12" -k "$KEYCHAIN" -P "$P12_PASSPHRASE" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/signing.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$PASS" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+
+      - name: Build, check and package
+        run: scripts/release.sh "$TAG"
+
+      - name: Sign the appcast
+        env:
+          SPARKLE_KEY: ${{ secrets.PREGAME_SPARKLE_KEY }}
+        run: |
+          VERSION="${TAG#v}"
+          printf '%s' "$SPARKLE_KEY" | PREGAME_SPARKLE_KEY_FILE=- scripts/make-appcast.sh "build/release/Pregame-$VERSION.dmg" build/release
+          echo "DMG=build/release/Pregame-$VERSION.dmg" >> "$GITHUB_ENV"
+          echo "APPCAST=build/release/appcast.xml" >> "$GITHUB_ENV"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            ${{ env.DMG }}
+            ${{ env.APPCAST }}
+
+      # The app reads releases/latest/download/appcast.xml, so this release
+      # becomes the latest, carrying its appcast (docs/updates.md).
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" "$DMG" "$APPCAST" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "Pregame ${TAG#v}" \
+            --generate-notes \
+            --latest
+
+      - name: Remove the signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
