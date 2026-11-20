@@ -3,6 +3,11 @@ import PackageDescription
 
 let homebrew = "/opt/homebrew"
 let vendor = Context.packageDirectory + "/Vendor"
+// TagLib: Homebrew's by default. Releases set PREGAME_TAGLIB_PREFIX to the one
+// scripts/build-taglib.sh builds from source for the minimum macOS (docs/releasing.md).
+let taglib = Context.environment["PREGAME_TAGLIB_PREFIX"].map {
+    $0.hasPrefix("/") ? $0 : Context.packageDirectory + "/" + $0
+} ?? homebrew
 
 let package = Package(
     name: "Pregame",
@@ -33,14 +38,14 @@ let package = Package(
                 .unsafeFlags(["-w"]),  // third-party code: silence warnings
             ]
         ),
-        // TagLib (LGPL) via Homebrew; bundled into the .app by scripts/build-app.sh.
+        // TagLib (LGPL); bundled into the .app by scripts/build-app.sh.
         .target(
             name: "CTagLib",
             path: "Sources/CTagLib",
             publicHeadersPath: "include",
-            cxxSettings: [.unsafeFlags(["-I\(homebrew)/include"])],
+            cxxSettings: [.unsafeFlags(["-I\(taglib)/include"])],
             linkerSettings: [
-                .unsafeFlags(["-L\(homebrew)/lib"]),
+                .unsafeFlags(["-L\(taglib)/lib"]),
                 .linkedLibrary("tag"),
             ]
         ),

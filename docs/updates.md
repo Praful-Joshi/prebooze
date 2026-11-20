@@ -48,11 +48,11 @@ On a new Mac, restore it instead of making a new one:
 .build/artifacts/sparkle/Sparkle/bin/generate_keys -f ~/Documents/pregame-update-key.txt
 ```
 
-`generate_keys -p` prints the public key. It must equal `SUPublicEDKey`. Don't generate a new key: installed copies only trust this one, so a new key would cut them off from updates. The release workflow ([#11](https://github.com/Praful-Joshi/pregame/issues/11)) takes the same key as a secret.
+`generate_keys -p` prints the public key. It must equal `SUPublicEDKey`. Don't generate a new key: installed copies only trust this one, so a new key would cut them off from updates. The release workflow takes the same key as a secret of the `release` environment ([releasing.md](releasing.md)), which also covers backing up and rotating it.
 
 ## Publishing an update by hand
 
-The release workflow (#11) will do this on a version tag. To do it locally:
+Normally the release workflow does this when you push a version tag ([releasing.md](releasing.md)). To do it locally:
 
 1. Raise `CFBundleShortVersionString` (shown, e.g. `0.2`) and `CFBundleVersion` (compared, e.g. `2`) in `scripts/Info.plist`, then build: `scripts/build-app.sh`.
 2. Package the DMG: `hdiutil create -volname Pregame -srcfolder build/Pregame.app -format UDZO build/Pregame-0.2.dmg`.

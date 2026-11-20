@@ -3,7 +3,8 @@ name: CI
 # Pull requests run once (not again for the branch push) and test on macOS 26
 # only, so small pushes stay quick. Pushes to main and a weekly run also test on
 # macOS 15, the minimum; the deployment target already makes the compiler reject
-# newer APIs on every build.
+# newer APIs on every build. The release rehearsal builds on macOS 15 every time,
+# alongside the tests: that's what a release builds on.
 on:
   push:
     branches: [main]
@@ -39,12 +40,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # macos-15's default Xcode is older than the one the code needs; use its
-      # newest release Xcode (betas excluded).
+      # newest release Xcode (no betas or release candidates).
       - name: Select Xcode
         if: matrix.os == 'macos-15'
         run: |
           ls -d /Applications/Xcode*.app
-          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)"
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -E '/Xcode_[0-9.]+\.app$' | sort -V | tail -1)"
 
       - name: Toolchain
         run: |
@@ -158,3 +159,100 @@ jobs:
           # Sparkle can only lift an update's quarantine flag from files it can write.
           UNWRITABLE="$(find "$APP" ! -perm -u+w)"
           [[ -z "$UNWRITABLE" ]] || { echo "not user-writable: $UNWRITABLE"; exit 1; }
+
+  release-rehearsal:
+    name: Release rehearsal (macos-15)
+    # Runs scripts/release.sh as .github/workflows/release.yml does, on the same
+    # macOS, but with a throwaway certificate and update key and without
+    # publishing, so a broken release shows up before a tag does. Only
+    # release.yml can read the real keys (docs/releasing.md).
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -E '/Xcode_[0-9.]+\.app$' | sort -V | tail -1)"
+
+      # TagLib is built from pinned source by scripts/release.sh, not from Homebrew.
+      - name: Native libraries (Homebrew)
+        run: brew install rubberband libsamplerate lame mpg123
+
+      # Restored files are verified against their checksums all the same.
+      - name: Cache ONNX Runtime and the Demucs weights
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            Vendor/onnxruntime/lib/libonnxruntime.1.dylib
+            Models/htdemucs.onnx.data
+          key: vendor-model-${{ hashFiles('scripts/fetch-vendor.sh') }}
+
+      - name: Throwaway signing identity and update key
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          PASS="$(openssl rand -hex 16)"
+          security create-keychain -p "$PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$PASS" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          PREGAME_KEYCHAIN="$KEYCHAIN" PREGAME_SIGNING_PASSPHRASE="$PASS" \
+            scripts/make-signing-identity.sh "$RUNNER_TEMP/backup.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$PASS" "$KEYCHAIN" > /dev/null
+          # Sparkle's key file holds a base64 Ed25519 seed: any 32 random bytes.
+          openssl rand -base64 32 > "$RUNNER_TEMP/update-key.txt"
+          # The rehearsal's app trusts that key, as the real app trusts the real one.
+          cat > "$RUNNER_TEMP/public-key.swift" <<'SWIFT'
+          import CryptoKit
+          import Foundation
+          let seed = Data(base64Encoded: readLine()!.trimmingCharacters(in: .whitespaces))!
+          print(try! Curve25519.Signing.PrivateKey(rawRepresentation: seed).publicKey.rawRepresentation.base64EncodedString())
+          SWIFT
+          PUBLIC_KEY="$(swift "$RUNNER_TEMP/public-key.swift" < "$RUNNER_TEMP/update-key.txt")"
+          /usr/libexec/PlistBuddy -c "Set :SUPublicEDKey $PUBLIC_KEY" scripts/Info.plist
+
+      - name: Build, check and package
+        run: |
+          VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' scripts/Info.plist)"
+          scripts/release.sh "v$VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Sign the appcast
+        run: |
+          PREGAME_SPARKLE_KEY_FILE=- scripts/make-appcast.sh "build/release/Pregame-$VERSION.dmg" build/release < "$RUNNER_TEMP/update-key.txt"
+
+      - name: The DMG installs an app that launches on macOS 15
+        run: |
+          DMG="build/release/Pregame-$VERSION.dmg"
+          MOUNT="$RUNNER_TEMP/dmg"
+          mkdir "$MOUNT"
+          hdiutil attach -quiet -nobrowse -readonly -mountpoint "$MOUNT" "$DMG"
+          [[ "$(readlink "$MOUNT/Applications")" == /Applications ]] || { echo "no Applications link in the DMG"; exit 1; }
+          ditto "$MOUNT/Pregame.app" "$RUNNER_TEMP/Pregame.app"
+          hdiutil detach -quiet "$MOUNT"
+          APP="$RUNNER_TEMP/Pregame.app"
+          codesign --verify --strict --deep "$APP"
+          [[ -f "$APP/Contents/Resources/Models/htdemucs.onnx.data" ]] || { echo "the Demucs model isn't bundled"; exit 1; }
+          scripts/check-min-macos.sh "$APP"
+          # dyld refuses a library built for a newer macOS at launch, so launch it.
+          "$APP/Contents/MacOS/Pregame" > "$RUNNER_TEMP/launch.log" 2>&1 &
+          PID=$!
+          sleep 20
+          if ! kill -0 "$PID" 2>/dev/null; then
+            cat "$RUNNER_TEMP/launch.log"
+            echo "Pregame quit at launch"
+            exit 1
+          fi
+          kill "$PID"
+
+      # make-appcast.sh already checked the DMG's signature against the app's key.
+      - name: The appcast is signed and points at the release
+        run: |
+          APPCAST=build/release/appcast.xml
+          .build/artifacts/sparkle/Sparkle/bin/sign_update --verify --ed-key-file "$RUNNER_TEMP/update-key.txt" "$APPCAST"
+          URL="$(xmllint --xpath 'string(//item/enclosure/@url)' "$APPCAST")"
+          [[ "$URL" == "https://github.com/Praful-Joshi/pregame/releases/download/v$VERSION/Pregame-$VERSION.dmg" ]] \
+            || { echo "the appcast points at $URL"; exit 1; }

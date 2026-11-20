@@ -1,6 +1,6 @@
 # Stem model (Demucs htdemucs → ONNX)
 
-Pregame separates stems with Demucs v4 (`htdemucs`, MIT) running in ONNX Runtime (MIT, Core ML provider). The app ships `Models/htdemucs.onnx` and `Models/htdemucs.onnx.data`. The STFT/iSTFT, segmentation and overlap-add are done in Swift (`Sources/PregameCore/Stems.swift`).
+Pregame separates stems with Demucs v4 (`htdemucs`, MIT) running in ONNX Runtime (MIT, Core ML provider). The app ships `Models/htdemucs.onnx` (in the repository) and `Models/htdemucs.onnx.data` (the weights, too big for git). `scripts/fetch-vendor.sh --model` downloads the weights from the release `model-htdemucs-1` and checks both files against pinned checksums. The STFT/iSTFT, segmentation and overlap-add are done in Swift (`Sources/PregameCore/Stems.swift`).
 
 ## Rebuild the model
 

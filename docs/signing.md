@@ -33,7 +33,7 @@ Restore the backup instead of creating a new certificate. macOS asks for the bac
 security import ~/Documents/pregame-signing.p12 -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign
 ```
 
-Release builds signed in CI ([#11](https://github.com/Praful-Joshi/pregame/issues/11)) must import this same backup as a secret. A different certificate would make every update a different app to macOS, and Mix Hosts would lose the folder access they granted.
+Release builds signed in CI import this same backup, a secret of the `release` environment ([releasing.md](releasing.md)). A different certificate would make every update a different app to macOS, and Mix Hosts would lose the folder access they granted.
 
 ## Checking it
 

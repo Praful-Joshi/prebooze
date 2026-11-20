@@ -8,3 +8,5 @@ build/
 # GitHub rejects files over 100 MB, and binaries bloat history forever.
 Models/htdemucs.onnx.data
 Vendor/onnxruntime/lib/*.dylib
+# Built from pinned source by scripts/build-taglib.sh for releases.
+Vendor/taglib/

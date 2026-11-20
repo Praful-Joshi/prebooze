@@ -31,9 +31,9 @@ scripts/build-app.sh --install   # release build of Pregame.app into /Applicatio
 
 `build-app.sh` signs the app with one self-signed certificate, so macOS keeps the folder access you grant it across rebuilds. Create the certificate once, and keep its backup out of the repo; see [docs/signing.md](docs/signing.md).
 
-The app updates itself with Sparkle from an EdDSA-signed appcast on GitHub Releases. `scripts/make-appcast.sh <dmg>` generates and signs the appcast for a release; see [docs/updates.md](docs/updates.md).
+The app updates itself with Sparkle from an EdDSA-signed appcast on GitHub Releases. Pushing a version tag builds, signs and publishes a release once the maintainer approves it; see [docs/releasing.md](docs/releasing.md) and [docs/updates.md](docs/updates.md).
 
-`build-app.sh` also bundles the Demucs stem model (`Models/htdemucs.onnx.data`, 161 MB), which isn't in the repo. Export it as described in [`scripts/stems/README.md`](scripts/stems/README.md); everything except stem separation works without it.
+`build-app.sh` also bundles the Demucs stem model (`Models/htdemucs.onnx.data`, 161 MB), which is too big for the repo. `scripts/fetch-vendor.sh --model` downloads it and checks its checksum (or rebuild it as described in [`scripts/stems/README.md`](scripts/stems/README.md)); everything except stem separation works without it.
 
 Every pull request and every push to `main` is built and tested by [GitHub Actions](.github/workflows/ci.yml). More developer detail is under [Developing](#developing).
 
@@ -242,7 +242,7 @@ scripts/build-app.sh --install  # release .app → /Applications, signed (docs/s
 - Homebrew `taglib` (bundled into the .app), `rubberband`, `libsamplerate`, `lame`, `mpg123` (linked statically)
 - ONNX Runtime 1.31.0 in `Vendor/onnxruntime/lib`, fetched and checksum-verified by `scripts/fetch-vendor.sh`
 
-The deployment target is macOS 15, the oldest macOS that GitHub Actions still offers. Pull requests are tested on macOS 26. Every push to `main`, and a weekly run, also tests on macOS 15, so every supported version is tested. Anything newer than 15 must sit behind `#available` with a fallback. Homebrew builds its libraries for the macOS it runs on, so a local build only runs on that version of macOS or later. Release builds need those libraries built for macOS 15 ([#11](https://github.com/Praful-Joshi/pregame/issues/11)).
+The deployment target is macOS 15, the oldest macOS that GitHub Actions still offers. Pull requests are tested on macOS 26. Every push to `main`, and a weekly run, also tests on macOS 15, so every supported version is tested. Anything newer than 15 must sit behind `#available` with a fallback. Homebrew builds its libraries for the macOS it runs on, so a local build only runs on that version of macOS or later. Releases are therefore built on macOS 15 by the release workflow, with TagLib built from pinned source, and `scripts/check-min-macos.sh` checks every Mach-O in the app ([docs/releasing.md](docs/releasing.md)). CI rehearses the release on every pull request.
 
 **Tests** drive public behaviour (mostly through `MixProject`, plus the playback engine) and assert on what a Mix Host would notice: which Tracks play and in what order, Transition labels, lengths, and the audio frames produced. They are deterministic (seeded, with a fixed amount of solver work) and run offline. The test audio is generated in Swift, so no real music is committed.
 

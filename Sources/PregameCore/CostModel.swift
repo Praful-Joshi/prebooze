@@ -35,7 +35,7 @@ public struct HarmonicConfig: Codable, Sendable {
     public let defaults: Defaults
 
     public static func load() -> HarmonicConfig {
-        let url = Bundle.module.url(forResource: "config", withExtension: "json")!
+        let url = Bundle.pregameCore.url(forResource: "config", withExtension: "json")!
         // The bundled config is part of the app; failing to read it is a build error.
         return try! JSONDecoder().decode(HarmonicConfig.self, from: Data(contentsOf: url))
     }

@@ -23,7 +23,11 @@ fi
 swift build -c release --product Pregame
 BIN="$(swift build -c release --show-bin-path)"
 APP="build/Pregame.app"
-TAGLIB="/opt/homebrew/opt/taglib/lib/libtag.2.dylib"
+# TagLib from Homebrew, or from PREGAME_TAGLIB_PREFIX (as Package.swift reads it):
+# releases build it for the minimum macOS with scripts/build-taglib.sh.
+TAGLIB_PREFIX="${PREGAME_TAGLIB_PREFIX:-/opt/homebrew/opt/taglib}"
+TAGLIB="${TAGLIB_PREFIX:A}/lib/libtag.2.dylib"
+TAGLIB_LINKED="$(otool -D "$TAGLIB" | tail -1)"   # the path the app was linked against
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
@@ -40,7 +44,7 @@ cp .build/checkouts/Sparkle/LICENSE "$APP/Contents/Resources/SPARKLE_LICENSE"
 cp "$TAGLIB" "$APP/Contents/Frameworks/libtag.2.dylib"
 chmod u+w "$APP/Contents/Frameworks/libtag.2.dylib"
 install_name_tool -id "@rpath/libtag.2.dylib" "$APP/Contents/Frameworks/libtag.2.dylib"
-install_name_tool -change "$TAGLIB" "@rpath/libtag.2.dylib" "$APP/Contents/MacOS/Pregame"
+install_name_tool -change "$TAGLIB_LINKED" "@rpath/libtag.2.dylib" "$APP/Contents/MacOS/Pregame"
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/Pregame"
 
 # Sparkle (updates, docs/updates.md), straight from the pinned package's
